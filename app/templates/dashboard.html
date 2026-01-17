@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>EM-Aide</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+      .muted { color: #6b7280; }
+      pre { background: #0b1020; color: #d1d5db; padding: 12px; border-radius: 12px; overflow: auto; max-height: 420px; }
+      button { padding: 10px 14px; border-radius: 10px; border: 1px solid #111827; background: #111827; color: white; cursor: pointer; }
+      button.secondary { background: white; color: #111827; }
+      .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap;}
+      table { width: 100%; border-collapse: collapse; }
+      td, th { padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+      .plan-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin-top: 10px; }
+      .plan-card-header { display:flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+      .plan-title { font-weight: 700; color: #111827; }
+      .risk-list { display: grid; gap: 10px; margin-top: 8px; }
+      .risk-row { border: 1px dashed #e5e7eb; border-radius: 12px; padding: 10px; }
+      .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #e5e7eb; }
+      .sev-high { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+      .sev-med  { background: #ffedd5; border-color: #fed7aa; color: #9a3412; }
+      .sev-low  { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+
+    </style>
+  </head>
+  <body>
+    <h1>EM-Aide</h1>
+    <p class="muted">Local metrics + sanitized agentic planning (Option B). No ticket text or code leaves this machine.</p>
+
+    {% if team %}
+    <div class="row">
+      <button class="secondary" onclick="post('/teams/{{team.id}}/metrics/snapshot')">Snapshot metrics</button>
+      <button onclick="post('/teams/{{team.id}}/plan/run')">Run weekly plan</button>
+      <a href="/runs" class="muted">View agent runs</a>
+    </div>
+    {% else %}
+      <p>No team configured.</p>
+    {% endif %}
+
+    <div class="grid" style="margin-top: 14px;">
+      <div class="card">
+        <h3>Latest metrics</h3>
+        {% if metrics and metrics|length > 0 %}
+        <table>
+          <thead><tr><th>Metric</th><th>Value</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for m in metrics %}
+              <tr><td><code>{{m.name}}</code></td><td>{{"%.3f"|format(m.value)}}</td><td>{{m.as_of_date}}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="muted">No metrics yet. Click “Snapshot metrics”.</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+  <h3>Latest weekly plan</h3>
+
+  {% if latest_plan_json %}
+    <div id="planRoot" class="muted">Loading plan…</div>
+
+    <details style="margin-top:12px;">
+      <summary class="muted">Show raw JSON</summary>
+      <pre id="planRaw">{{ latest_plan_json }}</pre>
+    </details>
+  {% else %}
+    <p class="muted">No plan yet. Click “Run weekly plan”.</p>
+  {% endif %}
+</div>
+
+<script>
+  (function renderPlan(){
+    const rawEl = document.getElementById("planRaw");
+    const root = document.getElementById("planRoot");
+    if (!rawEl || !root) return;
+
+    let plan;
+    try { 
+      plan = JSON.parse(rawEl.textContent);
+      rawEl.textContent = JSON.stringify(plan, null, 2);
+     }
+    catch (e) { root.textContent = "Could not parse plan JSON."; return; }
+
+    const esc = (s) => (s ?? "").toString()
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+
+    const pct = (x) => {
+      const n = Number(x);
+      if (Number.isNaN(n)) return "";
+      return Math.round(n * 100) + "%";
+    };
+
+    const badge = (sev) => {
+      const cls = sev === "high" ? "sev-high" : sev === "medium" ? "sev-med" : "sev-low";
+      return `<span class="badge ${cls}">${esc(sev)}</span>`;
+    };
+
+    const actions = (plan.top_actions || []).map((a, i) => `
+      <div class="plan-card">
+        <div class="plan-card-header">
+          <div class="plan-title">${i+1}. ${esc(a.title)}</div>
+          <div class="muted">Confidence: <strong>${pct(a.confidence)}</strong></div>
+        </div>
+        <div style="margin-top:8px;">
+          <div><strong>Expected impact:</strong> ${esc(a.expected_impact)}</div>
+          <div style="margin-top:6px;"><strong>Why:</strong> ${esc(a.rationale)}</div>
+          ${a.evidence?.length ? `<div style="margin-top:6px;"><strong>Evidence:</strong> <span class="muted">${esc(a.evidence.join("; "))}</span></div>` : ""}
+          ${a.steps?.length ? `<div style="margin-top:8px;"><strong>Steps:</strong><ol>${a.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></div>` : ""}
+          <div style="margin-top:6px;"><strong>Risk:</strong> ${esc(a.risk)}</div>
+        </div>
+      </div>
+    `).join("");
+
+    const risks = (plan.top_risks || []).map((r) => `
+      <div class="risk-row">
+        <div class="risk-title">${badge(r.severity)} ${esc(r.title)}</div>
+        <div class="muted">Likelihood: <strong>${pct(r.likelihood)}</strong></div>
+        <div class="muted" style="margin-top:4px;">${esc(r.description)}</div>
+        ${r.mitigations?.length ? `<div style="margin-top:6px;"><strong>Mitigations:</strong> <span class="muted">${esc(r.mitigations.join("; "))}</span></div>` : ""}
+      </div>
+    `).join("");
+
+    root.innerHTML = `
+      <div class="muted">
+        Week start: <strong>${esc(plan.week_start)}</strong>
+        · Generated: <strong>${esc(plan.generated_at)}</strong>
+      </div>
+      ${plan.summary ? `<div style="margin-top:10px;"><strong>Summary:</strong> ${esc(plan.summary)}</div>` : ""}
+      <h4 style="margin-top:14px;">Top actions</h4>
+      ${actions || "<div class='muted'>No actions returned.</div>"}
+      <h4 style="margin-top:14px;">Top risks</h4>
+      <div class="risk-list">${risks || "<div class='muted'>No risks returned.</div>"}</div>
+    `;
+  })();
+</script>
+
+    </div>
+
+    <script>
+      async function post(path) {
+        const res = await fetch(path, {method: "POST"});
+        const data = await res.json();
+        alert(JSON.stringify(data, null, 2));
+        window.location.reload();
+      }
+    </script>
+  </body>
+</html>

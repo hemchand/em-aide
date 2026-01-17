@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: emaide
+      POSTGRES_PASSWORD: emaide
+      POSTGRES_DB: emaide
+    ports:
+      - "5432:5432"
+    volumes:
+      - emaide_db:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file: .env
+    depends_on:
+      - db
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ./app:/app/app
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  emaide_db:

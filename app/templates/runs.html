@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>EM-Aide - Runs</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+      .muted { color: #6b7280; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+      a { color: #111827; }
+    </style>
+  </head>
+  <body>
+    <h1>Agent runs</h1>
+    <p><a href="/">← Back</a></p>
+
+    {% for r in runs %}
+      <div class="card">
+        <div><strong>Run #{{r.id}}</strong> <span class="muted">({{r.created_at}})</span></div>
+        <div>Team: <code>{{r.team_id}}</code> | Mode: <code>{{r.llm_mode}}</code> | Model: <code>{{r.model}}</code></div>
+        <div>Status: <code>{{r.status}}</code></div>
+        {% if r.error %}
+          <div class="muted">Error: {{r.error}}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </body>
+</html>
