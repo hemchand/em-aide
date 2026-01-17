@@ -1,4 +1,4 @@
-# EM-Aide (MVP) — Option B (Local Data + Remote LLM), ready for Option A
+# EM-Aide (MVP)
 
 EM-Aide is a local, privacy-first Engineering Manager Copilot:
 - Ingests Jira Cloud + GitHub (Cloud or Enterprise via base URL) **into a local Postgres DB**
