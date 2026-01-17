@@ -131,4 +131,4 @@ def api_sync_github(team_id: int, db: Session = Depends(get_db)):
         db=db,
         since_days=30,
     )
-    return {"status": "ok", "prs_synced": pr_count, "repo": f"{ghcfg.owner}/{ghcfg.repo}"
+    return {"status": "ok", "prs_synced": pr_count, "repo": f"{ghcfg.owner}/{ghcfg.repo}"}
