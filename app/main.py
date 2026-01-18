@@ -1,4 +1,7 @@
 from fastapi import FastAPI, Request, Depends
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -9,12 +12,23 @@ from app import models
 from app.services import ensure_default_org_team, upsert_configs, run_weekly_plan
 from app.metrics.compute import snapshot_metrics
 from app.ingest.github_ingest import sync_github
-from app.logging import get_logger
 
-log = get_logger("api")
 
 app = FastAPI(title="EM-Aide")
 templates = Jinja2Templates(directory="app/templates")
+
+UI_DIST = "/app/ui-dist"
+if os.path.isdir(UI_DIST):
+    # Serve the React app at /app (single-origin, no CORS)
+    app.mount("/app", StaticFiles(directory=UI_DIST, html=True), name="ui")
+
+    @app.get("/app/{full_path:path}")
+    def spa_fallback(full_path: str):
+        index_path = os.path.join(UI_DIST, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        return {"error": "UI not built"}
+
 
 def get_db():
     db = SessionLocal()
@@ -53,6 +67,27 @@ def _startup():
 @app.get("/health")
 def health():
     return {"status": "ok", "project": "EM-Aide"}
+
+@app.get("/api/health")
+def api_health():
+    return health()
+
+@app.get("/api/teams")
+def api_teams(db: Session = Depends(get_db)):
+    teams = db.query(models.Team).all()
+    return [{"id": t.id, "name": t.name} for t in teams]
+
+@app.post("/api/teams/{team_id}/metrics/snapshot")
+def api_snapshot_metrics_alias(team_id: int, db: Session = Depends(get_db)):
+    return api_snapshot_metrics(team_id=team_id, db=db)
+
+@app.post("/api/teams/{team_id}/plan/run")
+def api_run_plan_alias(team_id: int, db: Session = Depends(get_db)):
+    return api_run_plan(team_id=team_id, db=db)
+
+@app.get("/api/teams/{team_id}/plan/latest")
+def api_latest_plan_alias(team_id: int, db: Session = Depends(get_db)):
+    return api_latest_plan(team_id=team_id, db=db)
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
@@ -116,10 +151,23 @@ def runs(request: Request, db: Session = Depends(get_db)):
             .limit(50).all())
     return templates.TemplateResponse("runs.html", {"request": request, "runs": runs})
 
+@app.get("/api/teams/{team_id}/metrics/latest")
+def api_latest_metrics(team_id: int, db: Session = Depends(get_db)):
+    rows = (
+        db.query(models.MetricSnapshot)
+        .filter(models.MetricSnapshot.team_id == team_id)
+        .order_by(models.MetricSnapshot.as_of_date.desc(), models.MetricSnapshot.id.desc())
+        .limit(200)
+        .all()
+    )
+
+    # return a compact list (name/value/date)
+    return [{"name": r.name, "value": r.value, "as_of_date": str(r.as_of_date)} for r in rows]
 
 @app.post("/teams/{team_id}/sync/github")
 def api_sync_github(team_id: int, db: Session = Depends(get_db)):
     team = db.query(models.Team).filter_by(id=team_id).one()
+
     ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team.id).one()
 
     pr_count = sync_github(
@@ -131,4 +179,9 @@ def api_sync_github(team_id: int, db: Session = Depends(get_db)):
         db=db,
         since_days=30,
     )
-    return {"status": "ok", "prs_synced": pr_count, "repo": f"{ghcfg.owner}/{ghcfg.repo}"}
+
+    return {
+        "status": "ok",
+        "repo": f"{ghcfg.owner}/{ghcfg.repo}",
+        "prs_synced": pr_count
+    }

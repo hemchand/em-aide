@@ -3,33 +3,10 @@ import json
 from app.schemas import WeeklyPlanSchema, ActionSchema, RiskSchema, ContextPacketSchema
 from app.llm.client import get_llm_client
 
-SYSTEM_PROMPT = """
-You are EM-Aide, a decision-support copilot for Engineering Managers.
-
-You receive ONLY sanitized delivery signals and anonymized entity references.
-You do NOT have access to code, diffs, ticket text, or team discussions.
-
-Your job:
-- Identify the MOST IMPORTANT actions an EM should take THIS WEEK.
-- Be concise, concrete, and operational.
-
-Rules:
-- Prefer clarity over completeness.
-- Avoid generic advice.
-- Do not restate raw metrics unless they directly support a decision.
-- Each action must be something an EM can realistically do within a week.
-- Write for a busy EM reading this in under 2 minutes.
-
-Hard limits:
-- Exactly 3 actions.
-- Exactly 5 risks.
-- Action rationale: max 2 sentences.
-- Steps: max 3 bullets.
-- Risk description: max 1 sentence.
-- Summary: max 3 sentences.
-
-Output MUST be valid JSON matching the provided schema.
-Do not include markdown, commentary, or extra text.
+SYSTEM_PROMPT = """You are EM-Aide, a decision-support copilot for Engineering Managers.
+You receive ONLY sanitized delivery signals and anonymized entity references. Do not ask for code or ticket text.
+Produce concrete, safe, high-leverage actions an EM can take this week.
+Output MUST be valid JSON matching the provided schema. No markdown. No extra text.
 """
 
 def _week_start(d: dt.date) -> dt.date:
@@ -61,22 +38,19 @@ def generate_weekly_plan(context: ContextPacketSchema) -> WeeklyPlanSchema:
         "summary": "string"
     }
 
-    user_prompt = f"""
-ContextPacket (sanitized JSON):
+    user_prompt = f"""ContextPacket (sanitized JSON):
 {context.model_dump_json(indent=2)}
 
 Task:
-Produce a focused weekly plan.
+1) Propose the TOP 3 actions for the coming work week.
+2) Provide TOP 5 risks with mitigations.
 
-Requirements:
-- Choose only the highest-leverage actions.
-- If an action does not materially reduce risk or improve flow this week, exclude it.
-- Cite evidence using signal names and entity IDs only (e.g. "pr_stale_count", "PR-1423").
-
-Formatting rules:
-- Keep text short and direct.
-- No hedging language.
-- No repeated explanations.
+Rules:
+- Use only the provided signals/entities.
+- Actions must be operational and safe (no destructive automation).
+- Evidence should cite signal names and entity IDs (e.g., 'pr_stale_count', 'PR-123').
+- Confidence: 0.0–1.0.
+- Output ONLY JSON.
 
 Schema hint:
 {json.dumps(schema_hint, indent=2)}

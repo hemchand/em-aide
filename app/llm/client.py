@@ -3,11 +3,6 @@ from typing import Protocol, Type, Any
 import httpx
 from pydantic import BaseModel
 from app.settings import settings
-import json
-from app.logging import get_logger
-
-logger = get_logger("emaide.llm")
-
 
 class LLMClient(Protocol):
     def generate_structured(self, system: str, user: str, schema: Type[BaseModel]) -> BaseModel: ...
@@ -41,24 +36,11 @@ class OpenAICompatibleClient:
             # Best-effort: many OpenAI-compatible providers accept this; if not, it is ignored.
             "response_format": {"type": "json_object"},
         }
-        # logger.info("LLM payload (sanitized): %s",
-        #     json.dumps({
-        #         "model": self.model,
-        #         "temperature": settings.llm_temperature,
-        #         "max_tokens": settings.llm_max_tokens,
-        #         "system": system,
-        #         "user": user[:4000]  # truncate for safety
-        #     }, indent=2)
-        # )
-        
         with httpx.Client(timeout=self.timeout) as client:
             r = client.post(url, headers=headers, json=payload)
             r.raise_for_status()
             data = r.json()
-            data_text = r.text
-        logger.info("data_text: %s", data_text)
         content = data["choices"][0]["message"]["content"]
-        # content = content.replace("\n", "").replace("```json", "").replace("```", "")
         # Parse JSON into schema
         return schema.model_validate_json(content)
 

@@ -1,4 +1,4 @@
-# EM-Aide (MVP)
+# EM-Aide (MVP) — Option B (Local Data + Remote LLM), ready for Option A
 
 EM-Aide is a local, privacy-first Engineering Manager Copilot:
 - Ingests Jira Cloud + GitHub (Cloud or Enterprise via base URL) **into a local Postgres DB**
@@ -62,3 +62,10 @@ EM-Aide does **not** send:
 
 It sends:
 - counts, durations, statuses, sizes, anonymized IDs, and aggregated signals.
+
+
+## React UI
+After `docker compose up -d --build`, open the UI at:
+- http://localhost:8080/app
+
+The API remains available as before, and also under `/api/*` aliases for UI calls.
