@@ -1,4 +1,4 @@
-# EM-Aide (MVP) — Option B (Local Data + Remote LLM), ready for Option A
+# EM-Aide (MVP) — Local Data + Remote LLM with plans for local LLM
 
 EM-Aide is a local, privacy-first Engineering Manager Copilot:
 - Ingests Jira Cloud + GitHub (Cloud or Enterprise via base URL) **into a local Postgres DB**
@@ -23,16 +23,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-3) Open dashboard:
+3) Open React dashboard:
 
-- http://localhost:8080
+- http://localhost:8080/app
 
 ## GitHub Cloud vs Enterprise
 Set `GITHUB_API_BASE_URL`:
 - GitHub Cloud default: `https://api.github.com`
 - GitHub Enterprise Server: `https://<your-ghe-domain>/api/v3`
 
-## LLM (Option B)
+## LLM Support
 This MVP uses an OpenAI-compatible endpoint.
 Set:
 - `LLM_BASE_URL`
@@ -41,7 +41,7 @@ Set:
 
 Only **sanitized metrics & IDs** are sent to the LLM.
 
-## Option A readiness (Local LLM)
+## Whats in cards
 There is a stub `OllamaClient` you can enable later via:
 - `LLM_MODE=local`
 - `OLLAMA_BASE_URL=http://host.docker.internal:11434`
@@ -62,10 +62,3 @@ EM-Aide does **not** send:
 
 It sends:
 - counts, durations, statuses, sizes, anonymized IDs, and aggregated signals.
-
-
-## React UI
-After `docker compose up -d --build`, open the UI at:
-- http://localhost:8080/app
-
-The API remains available as before, and also under `/api/*` aliases for UI calls.
