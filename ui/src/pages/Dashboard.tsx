@@ -76,12 +76,6 @@ useEffect(() => {
         const p = await getLatestPlan(teamId);
         setPlan(p);
         setRawJson(p ? JSON.stringify(p, null, 2) : null);
-      }
-
-      if (teamId) {
-        const p = await getLatestPlan(teamId);
-        setPlan(p);
-        setRawJson(p ? JSON.stringify(p, null, 2) : null);
 
         const ms = await getLatestMetrics(teamId);
         setMetrics(ms);
@@ -166,7 +160,7 @@ useEffect(() => {
 
         <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
           {plan ? (
-            <PlanView plan={plan} rawJson={rawJson} />
+            <PlanView plan={plan} rawJson={rawJson} owner={gh?.owner} repo={gh?.repo} />
           ) : (
             <div className="muted">
               No plan yet. Click <code>Run weekly plan</code>.
