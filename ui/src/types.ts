@@ -37,4 +37,5 @@ export type GitHubConfig = {
   owner: string;
   repo: string;
   api_base_url?: string;
+  web_base_url?: string;
 };

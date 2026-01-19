@@ -92,7 +92,8 @@ def api_latest_plan_alias(team_id: int, db: Session = Depends(get_db)):
 @app.get("/api/teams/{team_id}/github/config")
 def api_github_config_alias(team_id: int, db: Session = Depends(get_db)):
     ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team_id).one()
-    return {"owner": ghcfg.owner, "repo": ghcfg.repo }
+    web_base_url = ghcfg.api_base_url.replace("api.", "").replace("/api/v3", "")
+    return {"owner": ghcfg.owner, "repo": ghcfg.repo, "api_base_url": ghcfg.api_base_url, "web_base_url": web_base_url}
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):

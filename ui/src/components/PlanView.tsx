@@ -1,7 +1,7 @@
-import type { WeeklyPlan } from "../types";
+import type { WeeklyPlan, GitHubConfig } from "../types";
 import { Badge } from "./Badge";
 
-function linkifyPRs(text: string, owner: string, repo: string) {
+function linkifyPRs(text: string, ghcfg: GitHubConfig | null) {
   // Matches: PR-123, pr-123, #123
   const re = /(PR-?\s*\d+|#\d+)/gi;
 
@@ -11,7 +11,7 @@ function linkifyPRs(text: string, owner: string, repo: string) {
     const prNum = m ? (m[2] ?? m[3]) : null;
     if (!prNum) return <span key={i}>{part}</span>;
 
-    const href = `https://github.com/${owner}/${repo}/pull/${prNum}`;
+    const href = `${ghcfg?.web_base_url.replace(/\/$/, "")}/${ghcfg?.owner}/${ghcfg?.repo}/pull/${prNum}`;
     const label = part.replace(/\s+/g, "");
     return (
       <a
@@ -29,10 +29,8 @@ function linkifyPRs(text: string, owner: string, repo: string) {
 
 const pct = (x: number) => `${Math.round((Number.isFinite(x) ? x : 0) * 100)}%`;
 
-export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; owner?: string; repo?: string }) {
+export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; ghcfg: GitHubConfig | null }) {
   const p = props.plan;
-  const owner = props.owner ?? "";
-  const repo = props.repo ?? "";
 
 
   return (
@@ -108,7 +106,7 @@ export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; own
                       {a.evidence.map((e, idx) => (
                         <span key={idx}>
                           {idx ? "; " : ""}
-                          {linkifyPRs(e, owner, repo)}
+                          {linkifyPRs(e, props.ghcfg)}
                         </span>
                       ))}
                     </span>

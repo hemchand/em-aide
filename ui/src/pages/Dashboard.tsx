@@ -35,19 +35,6 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  useEffect(() => {
-  if (!teamId) return;
-  (async () => {
-    const p = await getLatestPlan(teamId);
-    setPlan(p);
-    setRawJson(p ? JSON.stringify(p, null, 2) : null);
-
-    const ms = await getLatestMetrics(teamId);
-    setMetrics(ms);
-  })();
-}, [teamId]);
-
 useEffect(() => {
   if (!teamId) return;
   (async () => {
@@ -160,7 +147,7 @@ useEffect(() => {
 
         <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
           {plan ? (
-            <PlanView plan={plan} rawJson={rawJson} owner={gh?.owner} repo={gh?.repo} />
+            <PlanView plan={plan} rawJson={rawJson} ghcfg={gh} />
           ) : (
             <div className="muted">
               No plan yet. Click <code>Run weekly plan</code>.
