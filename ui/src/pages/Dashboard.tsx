@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Team, WeeklyPlan, Metric } from "../types";
-import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGithub, getLatestMetrics } from "../api";
+import type { Team, WeeklyPlan, Metric, GitHubConfig } from "../types";
+import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGithub, getLatestMetrics, getGithubConfig } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { PlanView } from "../components/PlanView";
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [metrics, setMetrics] = useState<Metric[]>([])
+  const [gh, setGh] = useState<GitHubConfig | null>(null);
 
   const selectedTeam = useMemo(() => teams.find(t => t.id === teamId) ?? null, [teams, teamId]);
 
@@ -47,6 +48,22 @@ export default function Dashboard() {
   })();
 }, [teamId]);
 
+useEffect(() => {
+  if (!teamId) return;
+  (async () => {
+    const p = await getLatestPlan(teamId);
+    setPlan(p);
+    setRawJson(p ? JSON.stringify(p, null, 2) : null);
+
+    const ms = await getLatestMetrics(teamId);
+    setMetrics(ms);
+
+    const cfg = await getGithubConfig(teamId);
+    setGh(cfg);
+  })().catch((e: any) => {
+    setToast({ kind: "error", message: e?.message ?? String(e) });
+  });
+}, [teamId]);
 
   const act = async (label: string, fn: () => Promise<any>) => {
     setBusy(label);
@@ -68,6 +85,9 @@ export default function Dashboard() {
 
         const ms = await getLatestMetrics(teamId);
         setMetrics(ms);
+
+        const cfg = await getGithubConfig(teamId);
+        setGh(cfg);
       }
 
     } catch (e: any) {
@@ -104,7 +124,12 @@ export default function Dashboard() {
       <div className="grid grid-2">
         <Card
           title="Controls"
-          right={<span className="muted small">{selectedTeam ? `Team #${selectedTeam.id}` : ""}</span>}
+          right={
+            <span className="muted small">
+              {selectedTeam ? `Team #${selectedTeam.id}` : ""}
+              {gh?.owner && gh?.repo ? ` · ${gh.owner}/${gh.repo}` : ""}
+            </span>
+          }
         >
           <div className="row">
             <Button

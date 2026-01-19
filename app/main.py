@@ -89,6 +89,11 @@ def api_run_plan_alias(team_id: int, db: Session = Depends(get_db)):
 def api_latest_plan_alias(team_id: int, db: Session = Depends(get_db)):
     return api_latest_plan(team_id=team_id, db=db)
 
+@app.get("/api/teams/{team_id}/github/config")
+def api_github_config_alias(team_id: int, db: Session = Depends(get_db)):
+    ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team_id).one()
+    return {"owner": ghcfg.owner, "repo": ghcfg.repo }
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
     teams = db.query(models.Team).all()

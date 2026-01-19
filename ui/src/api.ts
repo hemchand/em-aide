@@ -1,4 +1,4 @@
-import type { Team, WeeklyPlan, Metric } from "./types";
+import type { Team, WeeklyPlan, Metric, GitHubConfig } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -35,3 +35,6 @@ export const getLatestMetrics = async (teamId: number): Promise<Metric[]> => {
   // expects backend endpoint: GET /api/teams/{team_id}/metrics/latest
   return request<Metric[]>(`/api/teams/${teamId}/metrics/latest`);
 };
+
+export const getGithubConfig = (teamId: number) =>
+  request<GitHubConfig>(`/api/teams/${teamId}/github/config`);

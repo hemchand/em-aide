@@ -32,3 +32,9 @@ export type Metric = {
   value: number;
   as_of_date: string;
 };
+
+export type GitHubConfig = {
+  owner: string;
+  repo: string;
+  api_base_url?: string;
+};
