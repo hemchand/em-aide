@@ -12,6 +12,7 @@ from app import models
 from app.services import ensure_default_org_team, upsert_configs, run_weekly_plan
 from app.metrics.compute import snapshot_metrics
 from app.ingest.github_ingest import sync_github
+from app.context.builder import build_context_packet
 
 
 app = FastAPI(title="EM-Aide")
@@ -191,3 +192,12 @@ def api_sync_github(team_id: int, db: Session = Depends(get_db)):
         "repo": f"{ghcfg.owner}/{ghcfg.repo}",
         "prs_synced": pr_count
     }
+
+@app.get("/api/teams/{team_id}/llm/context/preview")
+def api_llm_context_preview(team_id: int, db: Session = Depends(get_db)):
+    if os.getenv("ENVIRONMENT") not in ("local", "dev"):
+        raise HTTPException(status_code=403, detail="Disabled in this environment")
+
+    packet = db.query(models.ContextPacket).filter_by(team_id=team_id).order_by(models.ContextPacket.created_at.desc()).first()
+
+    return json.loads(packet.content_json)

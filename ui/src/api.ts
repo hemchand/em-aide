@@ -38,3 +38,6 @@ export const getLatestMetrics = async (teamId: number): Promise<Metric[]> => {
 
 export const getGithubConfig = (teamId: number) =>
   request<GitHubConfig>(`/api/teams/${teamId}/github/config`);
+
+export const getLlmContextPreview = (teamId: number) =>
+  request<any>(`/api/teams/${teamId}/llm/context/preview`);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Team, WeeklyPlan, Metric, GitHubConfig } from "../types";
-import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGithub, getLatestMetrics, getGithubConfig } from "../api";
+import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGithub, getLatestMetrics, getGithubConfig, getLlmContextPreview } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { PlanView } from "../components/PlanView";
@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [toast, setToast] = useState<Toast>(null);
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [gh, setGh] = useState<GitHubConfig | null>(null);
+  const [llmContext, setLlmContext] = useState<string | null>(null);
+  const [showLlmContext, setShowLlmContext] = useState(false);
 
   const selectedTeam = useMemo(() => teams.find(t => t.id === teamId) ?? null, [teams, teamId]);
 
@@ -130,9 +132,69 @@ useEffect(() => {
               disabled={!teamId || !!busy}
               onClick={() => act("Run weekly plan", () => runWeeklyPlan(teamId!))}
             />
-          </div>
+            <Button
+              kind="secondary"
+              label={busy === "Preview LLM data" ? "Loading…" : "Preview LLM data"}
+              disabled={!teamId || !!busy}
+              onClick={() =>
+                act("Preview LLM data", async () => {
+                  const ctx = await getLlmContextPreview(teamId!);
+                  setLlmContext(JSON.stringify(ctx, null, 2));
+                  setShowLlmContext(true);
+                  return ctx;
+                })
+              }
+            />
+
+            </div>
 
           <hr className="soft" />
+
+        {showLlmContext ? (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 18,
+        zIndex: 50
+      }}
+      onClick={() => setShowLlmContext(false)}
+    >
+      <div
+        className="card"
+        style={{ width: "min(1100px, 96vw)", maxHeight: "86vh", overflow: "auto" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="card-head">
+          <div className="card-title">LLM data preview (sanitized payload)</div>
+          <div className="row">
+            <Button kind="secondary" label="Close" onClick={() => setShowLlmContext(false)} />
+          </div>
+        </div>
+
+      <div className="muted small" style={{ marginTop: 8 }}>
+        This is the exact JSON payload sent to the model. Prompts are not shown.
+        </div>
+
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            marginTop: 12,
+            padding: 12,
+            borderRadius: 14,
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(0,0,0,0.25)"
+          }}
+        >
+          {llmContext ?? "No context loaded."}
+        </pre>
+      </div>
+    </div>
+  ) : null}
 
           <div className="muted">
             Suggested demo flow: <code>Sync</code> → <code>Snapshot</code> → <code>Plan</code>
