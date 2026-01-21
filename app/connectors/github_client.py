@@ -28,7 +28,7 @@ class GitHubClient:
         pulls = r.get_pulls(state="all", sort="updated", direction="desc")
         for pr in pulls:
             try:
-                log.info(f"Iterating PR #{pr.number}: {pr.title}, updated at {pr.updated_at}")
+                log.info(f"Iterating PR #{pr.number} updated at {pr.updated_at}")
                 if pr.updated_at and pr.updated_at.replace(tzinfo=None) < since:
                     break
                 yield pr
