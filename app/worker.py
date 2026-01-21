@@ -1,12 +1,11 @@
 import time
 import datetime as dt
 from apscheduler.schedulers.blocking import BlockingScheduler
-
 from app.db import SessionLocal, init_db
 from app.settings import settings
 from app import models
-from app.services import ensure_default_org_team, upsert_configs
-from app.ingest.github_ingest import sync_github
+from app.services import ensure_defaults_setup
+from app.ingest.git_ingest import sync_git
 from app.ingest.jira_ingest import sync_jira
 from app.metrics.compute import snapshot_metrics
 from app.logging import get_logger
@@ -15,41 +14,15 @@ log = get_logger("worker")
 
 
 def _get_team(db):
-    team = ensure_default_org_team(db, settings.default_org_name, settings.default_team_name)
-    upsert_configs(
-        db,
-        team,
-        github_cfg=dict(
-            api_base_url=settings.github_api_base_url,
-            token_present=bool(settings.github_token),
-            owner=settings.github_owner,
-            repo=settings.github_repo,
-        ),
-        jira_cfg=(dict(
-            base_url=settings.jira_base_url,
-            email=settings.jira_email,
-            token_present=bool(settings.jira_api_token),
-            project_key=settings.jira_project_key,
-            board_id=settings.jira_board_id,
-        ) if settings.jira_base_url and settings.jira_email and settings.jira_project_key and settings.jira_api_token else None)
-    )
+    team =ensure_defaults_setup(db)
     return team
 
 def job_sync():
     db = SessionLocal()
     try:
         team = _get_team(db)
-        ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team.id).one()
-        n = sync_github(
-            team_id=team.id,
-            api_base_url=ghcfg.api_base_url,
-            token=settings.github_token,
-            owner=ghcfg.owner,
-            repo=ghcfg.repo,
-            db=db,
-            since_days=30
-        )
-        log.info(f"github synced: {n} PRs")
+        n = sync_git(team_id=team.id, db=db, since_days=30)
+        log.info(f"git sync completed")
 
         if settings.jira_base_url and settings.jira_email and settings.jira_api_token and settings.jira_project_key:
             jcfg = db.query(models.JiraConfig).filter_by(team_id=team.id).one_or_none()

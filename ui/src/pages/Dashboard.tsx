@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Team, WeeklyPlan, Metric, GitHubConfig } from "../types";
-import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGithub, getLatestMetrics, getGithubConfig, getLlmContextPreview } from "../api";
+import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "../types";
+import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, getLatestMetrics, getGitPullRequests, getLlmContextPreview } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { PlanView } from "../components/PlanView";
@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [metrics, setMetrics] = useState<Metric[]>([])
-  const [gh, setGh] = useState<GitHubConfig | null>(null);
+  const [prs, setPrs] = useState<GitPullRequestMap[] | null>(null);
   const [llmContext, setLlmContext] = useState<string | null>(null);
   const [showLlmContext, setShowLlmContext] = useState(false);
 
@@ -47,8 +47,8 @@ useEffect(() => {
     const ms = await getLatestMetrics(teamId);
     setMetrics(ms);
 
-    const cfg = await getGithubConfig(teamId);
-    setGh(cfg);
+    const prs = await getGitPullRequests(teamId);
+    setPrs(prs);
   })().catch((e: any) => {
     setToast({ kind: "error", message: e?.message ?? String(e) });
   });
@@ -69,8 +69,8 @@ useEffect(() => {
         const ms = await getLatestMetrics(teamId);
         setMetrics(ms);
 
-        const cfg = await getGithubConfig(teamId);
-        setGh(cfg);
+        const prs = await getGitPullRequests(teamId);
+        setPrs(prs);
       }
 
     } catch (e: any) {
@@ -110,16 +110,16 @@ useEffect(() => {
           right={
             <span className="muted small">
               {selectedTeam ? `Team #${selectedTeam.id}` : ""}
-              {gh?.owner && gh?.repo ? ` · ${gh.owner}/${gh.repo}` : ""}
+              {prs ? '[' + prs.map(function (repo) { return `${repo.owner}/${repo.repo}`; }).join(', ') + ']' : "" }
             </span>
           }
         >
           <div className="row">
             <Button
               kind="secondary"
-              label={busy === "Sync GitHub" ? "Syncing…" : "Sync GitHub now"}
+              label={busy === "Sync Git" ? "Syncing…" : "Sync Git now"}
               disabled={!teamId || !!busy}
-              onClick={() => act("Sync GitHub", () => syncGithub(teamId!))}
+              onClick={() => act("Sync Git", () => syncGit(teamId!))}
             />
             <Button
               kind="secondary"
@@ -209,7 +209,7 @@ useEffect(() => {
 
         <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
           {plan ? (
-            <PlanView plan={plan} rawJson={rawJson} ghcfg={gh} />
+            <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
           ) : (
             <div className="muted">
               No plan yet. Click <code>Run weekly plan</code>.

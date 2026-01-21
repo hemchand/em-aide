@@ -7,7 +7,7 @@ from app.logging import get_logger
 
 log = get_logger("github_ingest")
 
-def _sync_pr_reviews(team_id: int, repo_full_name: str, pr_number: int, pr, db: Session) -> int:
+def _sync_pr_reviews(team_id: int, git_repo_id: int, pr_number: int, pr, db: Session) -> int:
     """Sync reviews for a single PR. Stores only hashed reviewer login + state + submitted_at."""
     from app.util import sha256_64
     from app import models as m
@@ -26,7 +26,7 @@ def _sync_pr_reviews(team_id: int, repo_full_name: str, pr_number: int, pr, db: 
                 continue
             state = (rv.state or "COMMENTED")
             existing = (db.query(m.PullRequestReview)
-                        .filter_by(team_id=team_id, repo_full_name=repo_full_name, pr_number=pr_number,
+                        .filter_by(team_id=team_id, git_repo_id=git_repo_id, pr_number=pr_number,
                                    reviewer_login_hash=reviewer_hash, submitted_at=submitted_at)
                         .one_or_none())
             if existing:
@@ -34,7 +34,7 @@ def _sync_pr_reviews(team_id: int, repo_full_name: str, pr_number: int, pr, db: 
             else:
                 db.add(m.PullRequestReview(
                     team_id=team_id,
-                    repo_full_name=repo_full_name,
+                    git_repo_id=git_repo_id,
                     pr_number=pr_number,
                     reviewer_login_hash=reviewer_hash,
                     state=state,
@@ -45,7 +45,7 @@ def _sync_pr_reviews(team_id: int, repo_full_name: str, pr_number: int, pr, db: 
             continue
     return count
 
-def sync_github(team_id: int, api_base_url: str, token: str | None, owner: str, repo: str, db: Session, since_days: int = 30) -> int:
+def sync_github(team_id: int, git_repo_id:int, api_base_url: str, token: str | None, owner: str, repo: str, db: Session, since_days: int = 30) -> int:
     client = GitHubClient(api_base_url=api_base_url, token=token)
     count = 0
     review_count = 0
@@ -60,7 +60,7 @@ def sync_github(team_id: int, api_base_url: str, token: str | None, owner: str, 
         deletions = getattr(pr, "deletions", None)
         changed_files = getattr(pr, "changed_files", None)
 
-        existing = db.query(models.PullRequest).filter_by(team_id=team_id, repo_full_name=full_name, pr_number=pr.number).one_or_none()
+        existing = db.query(models.PullRequest).filter_by(team_id=team_id, git_repo_id=git_repo_id, pr_number=pr.number).one_or_none()
         if existing:
             existing.state = pr.state
             existing.merged_at = pr.merged_at.replace(tzinfo=None) if pr.merged_at else None
@@ -72,8 +72,8 @@ def sync_github(team_id: int, api_base_url: str, token: str | None, owner: str, 
         else:
             row = models.PullRequest(
                 team_id=team_id,
+                git_repo_id=git_repo_id,
                 pr_number=pr.number,
-                repo_full_name=full_name,
                 title_hash=title_hash,
                 state=pr.state,
                 created_at=pr.created_at.replace(tzinfo=None) if pr.created_at else dt.datetime.utcnow(),
@@ -85,7 +85,7 @@ def sync_github(team_id: int, api_base_url: str, token: str | None, owner: str, 
                 author_login_hash=author_hash,
             )
             db.add(row)
-        review_count += _sync_pr_reviews(team_id, full_name, pr.number, pr, db)
+        review_count += _sync_pr_reviews(team_id, git_repo_id, pr.number, pr, db)
         count += 1
 
     db.commit()

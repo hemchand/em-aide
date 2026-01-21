@@ -33,9 +33,10 @@ export type Metric = {
   as_of_date: string;
 };
 
-export type GitHubConfig = {
+export type GitPullRequestMap = {
   owner: string;
   repo: string;
   api_base_url?: string;
   web_base_url?: string;
+  pull_requests: number[];
 };

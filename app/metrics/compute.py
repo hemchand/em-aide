@@ -4,14 +4,14 @@ from sqlalchemy import func
 from app import models
 
 def compute_metrics(team_id: int, db: Session) -> dict[str, float]:
-    # GitHub metrics from PR table + reviews table
+    #GIT metrics from PR table + reviews table
     prs = db.query(models.PullRequest).filter_by(team_id=team_id).all()
     reviews = db.query(models.PullRequestReview).filter_by(team_id=team_id).all()
 
-    # Index reviews by (repo_full_name, pr_number)
+    # Index reviews by (git_repo_id, pr_number)
     rv_map: dict[tuple[str,int], list[models.PullRequestReview]] = {}
     for rv in reviews:
-        rv_map.setdefault((rv.repo_full_name, rv.pr_number), []).append(rv)
+        rv_map.setdefault((rv.git_repo_id, rv.pr_number), []).append(rv)
 
     now = dt.datetime.utcnow()
 
@@ -42,7 +42,7 @@ def compute_metrics(team_id: int, db: Session) -> dict[str, float]:
             mega_prs += 1
 
         # review latency + coverage
-        pr_reviews = rv_map.get((pr.repo_full_name, pr.pr_number), [])
+        pr_reviews = rv_map.get((pr.git_repo_id, pr.pr_number), [])
         if pr_reviews:
             first = min(pr_reviews, key=lambda r: r.submitted_at)
             first_review_latency_hours.append((first.submitted_at - pr.created_at).total_seconds()/3600.0)

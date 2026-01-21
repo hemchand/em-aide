@@ -1,4 +1,4 @@
-import type { Team, WeeklyPlan, Metric, GitHubConfig } from "./types";
+import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -26,18 +26,18 @@ export const getLatestPlan = async (teamId: number): Promise<WeeklyPlan | null> 
   }
 };
 
-// GitHub sync endpoint might be non-/api in your backend (depends on whether you added the alias).
+// Git sync endpoint might be non-/api in your backend (depends on whether you added the alias).
 // This calls the non-/api path which should exist if you implemented manual sync earlier.
-export const syncGithub = (teamId: number) =>
-  request(`/teams/${teamId}/sync/github`, { method: "POST" });
+export const syncGit = (teamId: number) =>
+  request(`/teams/${teamId}/sync/git`, { method: "POST" });
 
 export const getLatestMetrics = async (teamId: number): Promise<Metric[]> => {
   // expects backend endpoint: GET /api/teams/{team_id}/metrics/latest
   return request<Metric[]>(`/api/teams/${teamId}/metrics/latest`);
 };
 
-export const getGithubConfig = (teamId: number) =>
-  request<GitHubConfig>(`/api/teams/${teamId}/github/config`);
+export const getGitPullRequests = (teamId: number) =>
+  request<GitPullRequestMap>(`/api/teams/${teamId}/git/pull/requests`);
 
 export const getLlmContextPreview = (teamId: number) =>
   request<any>(`/api/teams/${teamId}/llm/context/preview`);

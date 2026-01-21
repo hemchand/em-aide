@@ -19,20 +19,33 @@ class Team(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     org: Mapped["Org"] = relationship(back_populates="teams")
-    github_config: Mapped["GitHubConfig"] = relationship(back_populates="team", uselist=False)
+    git_repos: Mapped["GitRepo"] = relationship(back_populates="team", uselist=True)
     jira_config: Mapped["JiraConfig"] = relationship(back_populates="team", uselist=False)
 
-class GitHubConfig(Base):
-    __tablename__ = "github_configs"
+class GitProvider(Base):
+    __tablename__ = "git_providers"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), unique=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    api_base_url: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+
+    git_repos: Mapped["GitRepo"] = relationship(back_populates="git_provider", uselist=True)
+
+class GitRepo(Base):
+    __tablename__ = "git_repos"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"))
+    git_provider_id: Mapped[int] = mapped_column(ForeignKey("git_providers.id"))
     api_base_url: Mapped[str] = mapped_column(String(500))
     token_present: Mapped[bool] = mapped_column(Boolean, default=False)
     owner: Mapped[str] = mapped_column(String(200))
     repo: Mapped[str] = mapped_column(String(200))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
-    team: Mapped["Team"] = relationship(back_populates="github_config")
+    team: Mapped["Team"] = relationship(back_populates="git_repos")
+    git_provider: Mapped["GitProvider"] = relationship(back_populates="git_repos")
+
+    __table_args__ = (UniqueConstraint("team_id", "api_base_url", "owner", "repo", name="uq_repo"),)
 
 class JiraConfig(Base):
     __tablename__ = "jira_configs"
@@ -51,8 +64,8 @@ class PullRequest(Base):
     __tablename__ = "pull_requests"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), index=True)
+    git_repo_id: Mapped[int] = mapped_column(ForeignKey("git_repos.id"), unique=False)
     pr_number: Mapped[int] = mapped_column(Integer, index=True)
-    repo_full_name: Mapped[str] = mapped_column(String(400))
     title_hash: Mapped[str] = mapped_column(String(64))  # store hash, not title
     state: Mapped[str] = mapped_column(String(50))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime)
@@ -64,7 +77,7 @@ class PullRequest(Base):
     author_login_hash: Mapped[str] = mapped_column(String(64))
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
-    __table_args__ = (UniqueConstraint("team_id", "repo_full_name", "pr_number", name="uq_pr"),)
+    __table_args__ = (UniqueConstraint("team_id", "git_repo_id", "pr_number", name="uq_pr"),)
 
 class Issue(Base):
     __tablename__ = "jira_issues"
@@ -114,7 +127,7 @@ class PullRequestReview(Base):
     __tablename__ = "pull_request_reviews"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), index=True)
-    repo_full_name: Mapped[str] = mapped_column(String(400))
+    git_repo_id: Mapped[int] = mapped_column(ForeignKey("git_repos.id"), unique=False)
     pr_number: Mapped[int] = mapped_column(Integer, index=True)
     reviewer_login_hash: Mapped[str] = mapped_column(String(64))
     state: Mapped[str] = mapped_column(String(50))  # APPROVED / CHANGES_REQUESTED / COMMENTED / DISMISSED
@@ -122,7 +135,7 @@ class PullRequestReview(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint("team_id", "repo_full_name", "pr_number", "reviewer_login_hash", "submitted_at", name="uq_pr_review"),
+        UniqueConstraint("team_id", "git_repo_id", "pr_number", "reviewer_login_hash", "submitted_at", name="uq_pr_review"),
     )
 
 class WeeklyPlan(Base):

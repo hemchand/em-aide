@@ -1,7 +1,17 @@
-import type { WeeklyPlan, GitHubConfig } from "../types";
+import type { WeeklyPlan, GitPullRequestMap } from "../types";
 import { Badge } from "./Badge";
 
-function linkifyPRs(text: string, ghcfg: GitHubConfig | null) {
+function getRepoConfig(prNum: number, pull_requests: GitPullRequestMap[] | null) {
+  if (!pull_requests) return null;
+  for (const repo of pull_requests) {
+    if (repo.pull_requests.includes(prNum)) {
+      return repo;
+    }
+  }
+  return null;
+}
+
+function linkifyPRs(text: string, pull_requests: GitPullRequestMap[] | null) {
   // Matches: PR-123, pr-123, #123
   const re = /(PR-?\s*\d+|#\d+)/gi;
 
@@ -11,7 +21,8 @@ function linkifyPRs(text: string, ghcfg: GitHubConfig | null) {
     const prNum = m ? (m[2] ?? m[3]) : null;
     if (!prNum) return <span key={i}>{part}</span>;
 
-    const href = `${ghcfg?.web_base_url.replace(/\/$/, "")}/${ghcfg?.owner}/${ghcfg?.repo}/pull/${prNum}`;
+    const repo = getRepoConfig(Number(prNum), pull_requests);
+    const href = `${repo?.web_base_url.replace(/\/$/, "")}/${repo?.owner}/${repo?.repo}/pull/${prNum}`;
     const label = part.replace(/\s+/g, "");
     return (
       <a
@@ -29,7 +40,7 @@ function linkifyPRs(text: string, ghcfg: GitHubConfig | null) {
 
 const pct = (x: number) => `${Math.round((Number.isFinite(x) ? x : 0) * 100)}%`;
 
-export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; ghcfg: GitHubConfig | null }) {
+export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; pull_requests: GitPullRequestMap[] | null }) {
   const p = props.plan;
 
 
@@ -106,7 +117,7 @@ export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; ghc
                       {a.evidence.map((e, idx) => (
                         <span key={idx}>
                           {idx ? "; " : ""}
-                          {linkifyPRs(e, props.ghcfg)}
+                          {linkifyPRs(e, props.pull_requests)}
                         </span>
                       ))}
                     </span>

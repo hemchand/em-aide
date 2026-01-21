@@ -2,18 +2,19 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+import json
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, init_db
-from app.settings import settings
 from app import models
-from app.services import ensure_default_org_team, upsert_configs, run_weekly_plan
+from app.services import ensure_defaults_setup, run_weekly_plan
 from app.metrics.compute import snapshot_metrics
-from app.ingest.github_ingest import sync_github
-from app.context.builder import build_context_packet
+from app.ingest.git_ingest import sync_git
+from app.logging import get_logger
 
+log = get_logger("main")
 
 app = FastAPI(title="EM-Aide")
 templates = Jinja2Templates(directory="app/templates")
@@ -44,24 +45,7 @@ def _startup():
     # Create default org/team and configs from env
     db = SessionLocal()
     try:
-        team = ensure_default_org_team(db, settings.default_org_name, settings.default_team_name)
-        upsert_configs(
-            db,
-            team,
-            github_cfg=dict(
-                api_base_url=settings.github_api_base_url,
-                token_present=bool(settings.github_token),
-                owner=settings.github_owner,
-                repo=settings.github_repo,
-            ),
-            jira_cfg=(dict(
-                base_url=settings.jira_base_url,
-                email=settings.jira_email,
-                token_present=bool(settings.jira_api_token),
-                project_key=settings.jira_project_key,
-                board_id=settings.jira_board_id,
-            ) if settings.jira_base_url and settings.jira_email and settings.jira_project_key else None)
-        )
+        ensure_defaults_setup(db)
     finally:
         db.close()
 
@@ -90,11 +74,17 @@ def api_run_plan_alias(team_id: int, db: Session = Depends(get_db)):
 def api_latest_plan_alias(team_id: int, db: Session = Depends(get_db)):
     return api_latest_plan(team_id=team_id, db=db)
 
-@app.get("/api/teams/{team_id}/github/config")
-def api_github_config_alias(team_id: int, db: Session = Depends(get_db)):
-    ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team_id).one()
-    web_base_url = ghcfg.api_base_url.replace("api.", "").replace("/api/v3", "")
-    return {"owner": ghcfg.owner, "repo": ghcfg.repo, "api_base_url": ghcfg.api_base_url, "web_base_url": web_base_url}
+@app.get("/api/teams/{team_id}/git/pull/requests")
+def api_git_pull_requests(team_id: int, db: Session = Depends(get_db)):
+    get_web_url = lambda repo: repo.api_base_url.replace("api.", "").replace("/api/v3", "")
+    repos = db.query(models.GitRepo).filter_by(team_id=team_id).all()
+    repo_map = {repo.id: {"owner": repo.owner, "repo": repo.repo, "api_base_url": repo.api_base_url, "web_base_url": get_web_url(repo), "pull_requests": []} for repo in repos}
+    prs = db.query(models.PullRequest).filter_by(team_id=team_id).all()
+    for pr in prs:
+        repo_info = repo_map.get(pr.git_repo_id)
+        if repo_info:
+            repo_info["pull_requests"].append(pr.pr_number)
+    return list(repo_map.values())
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
@@ -171,25 +161,14 @@ def api_latest_metrics(team_id: int, db: Session = Depends(get_db)):
     # return a compact list (name/value/date)
     return [{"name": r.name, "value": r.value, "as_of_date": str(r.as_of_date)} for r in rows]
 
-@app.post("/teams/{team_id}/sync/github")
-def api_sync_github(team_id: int, db: Session = Depends(get_db)):
+#TODO: Remove after model changes
+@app.post("/teams/{team_id}/sync/git")
+def api_sync_git(team_id: int, db: Session = Depends(get_db)):
     team = db.query(models.Team).filter_by(id=team_id).one()
-
-    ghcfg = db.query(models.GitHubConfig).filter_by(team_id=team.id).one()
-
-    pr_count = sync_github(
-        team_id=team.id,
-        api_base_url=ghcfg.api_base_url,
-        token=settings.github_token,
-        owner=ghcfg.owner,
-        repo=ghcfg.repo,
-        db=db,
-        since_days=30,
-    )
+    pr_count = sync_git(team_id=team.id, db=db, since_days=30)
 
     return {
         "status": "ok",
-        "repo": f"{ghcfg.owner}/{ghcfg.repo}",
         "prs_synced": pr_count
     }
 
