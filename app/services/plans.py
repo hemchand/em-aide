@@ -8,10 +8,26 @@ from app.agents.weekly_plan import generate_weekly_plan
 def run_weekly_plan(db: Session, team_id: int) -> models.WeeklyPlan:
     team = db.query(models.Team).filter_by(id=team_id).one()
     packet = build_context_packet(team, db)
-    plan = generate_weekly_plan(packet)
 
     llm_mode = settings.llm_mode
     model = settings.llm_model if llm_mode == "remote" else settings.ollama_model
+
+    try:
+        plan = generate_weekly_plan(packet)
+    except Exception as exc:
+        with db.begin():
+            cp = models.ContextPacket(team_id=team_id, content_json=packet.model_dump_json())
+            db.add(cp)
+
+            ar = models.AgentRun(
+                team_id=team_id,
+                llm_mode=llm_mode,
+                model=model,
+                status="error",
+                error=str(exc),
+            )
+            db.add(ar)
+        raise
 
     with db.begin():
         cp = models.ContextPacket(team_id=team_id, content_json=packet.model_dump_json())
