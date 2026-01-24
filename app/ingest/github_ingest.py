@@ -9,12 +9,11 @@ log = get_logger("github_ingest")
 
 def _sync_pr_reviews(team_id: int, git_repo_id: int, pr_number: int, pr, db: Session) -> int:
     """Sync reviews for a single PR. Stores only hashed reviewer login + state + submitted_at."""
-    from app.util import sha256_64
-    from app import models as m
     count = 0
     try:
         reviews = pr.get_reviews()
-    except Exception:
+    except Exception as exc:
+        log.warning("Failed to fetch reviews for PR %s: %s", pr_number, exc)
         return 0
 
     for rv in reviews:
@@ -25,14 +24,14 @@ def _sync_pr_reviews(team_id: int, git_repo_id: int, pr_number: int, pr, db: Ses
             if not submitted_at:
                 continue
             state = (rv.state or "COMMENTED")
-            existing = (db.query(m.PullRequestReview)
+            existing = (db.query(models.PullRequestReview)
                         .filter_by(team_id=team_id, git_repo_id=git_repo_id, pr_number=pr_number,
                                    reviewer_login_hash=reviewer_hash, submitted_at=submitted_at)
                         .one_or_none())
             if existing:
                 existing.state = state
             else:
-                db.add(m.PullRequestReview(
+                db.add(models.PullRequestReview(
                     team_id=team_id,
                     git_repo_id=git_repo_id,
                     pr_number=pr_number,
@@ -41,14 +40,14 @@ def _sync_pr_reviews(team_id: int, git_repo_id: int, pr_number: int, pr, db: Ses
                     submitted_at=submitted_at
                 ))
             count += 1
-        except Exception:
+        except Exception as exc:
+            log.warning("Failed to sync review for PR %s: %s", pr_number, exc)
             continue
     return count
 
 def sync_github(team_id: int, git_repo_id:int, api_base_url: str, token: str | None, owner: str, repo: str, db: Session, since_days: int = 30) -> int:
     client = GitHubClient(api_base_url=api_base_url, token=token)
     count = 0
-    review_count = 0
     repo_obj = client.get_repo(owner, repo)
     full_name = repo_obj.full_name
     log.info(f"Syncing GitHub PRs for repo: {full_name}")
@@ -85,7 +84,7 @@ def sync_github(team_id: int, git_repo_id:int, api_base_url: str, token: str | N
                 author_login_hash=author_hash,
             )
             db.add(row)
-        review_count += _sync_pr_reviews(team_id, git_repo_id, pr.number, pr, db)
+        _sync_pr_reviews(team_id, git_repo_id, pr.number, pr, db)
         count += 1
 
     db.commit()

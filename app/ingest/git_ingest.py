@@ -9,6 +9,7 @@ log = get_logger("git_ingest")
 
 def sync_team_git(team_id: int, db: Session, since_days: int = 30) -> int:
     git_repos = db.query(models.GitRepo).filter_by(team_id=team_id).all()
+    total = 0
     for repo in git_repos:
         if repo.git_provider.name.lower() == "github":
             n = sync_github(
@@ -19,6 +20,8 @@ def sync_team_git(team_id: int, db: Session, since_days: int = 30) -> int:
                 owner=repo.owner,
                 repo=repo.repo,
                 db=db,
-                since_days=30
+                since_days=since_days
             )
+            total += n
             log.info(f"github synced: {n} PRs for repo {repo.owner}/{repo.repo}")
+    return total

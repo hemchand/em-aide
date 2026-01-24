@@ -7,35 +7,28 @@ from app.agents.weekly_plan import generate_weekly_plan
 
 def run_weekly_plan(db: Session, team_id: int) -> models.WeeklyPlan:
     team = db.query(models.Team).filter_by(id=team_id).one()
-    # build and persist context packet
     packet = build_context_packet(team, db)
-    cp = models.ContextPacket(team_id=team_id, content_json=packet.model_dump_json())
-    db.add(cp)
-    db.commit()
-    db.refresh(cp)
+    plan = generate_weekly_plan(packet)
 
-    # create agent run record
     llm_mode = settings.llm_mode
     model = settings.llm_model if llm_mode == "remote" else settings.ollama_model
-    ar = models.AgentRun(team_id=team_id, llm_mode=llm_mode, model=model, status="running")
-    db.add(ar)
-    db.commit()
-    db.refresh(ar)
 
-    try:
-        plan = generate_weekly_plan(packet)
-        ar.status = "ok"
-        db.commit()
-    except Exception as e:
-        ar.status = "error"
-        ar.error = str(e)
-        db.commit()
-        raise
+    with db.begin():
+        cp = models.ContextPacket(team_id=team_id, content_json=packet.model_dump_json())
+        db.add(cp)
 
-    week_start = plan.week_start
-    wp = models.WeeklyPlan(team_id=team_id, agent_run_id=ar.id, week_start=week_start, plan_json=plan.model_dump_json())
-    db.add(wp)
-    db.commit()
+        ar = models.AgentRun(team_id=team_id, llm_mode=llm_mode, model=model, status="ok")
+        db.add(ar)
+        db.flush()
+
+        wp = models.WeeklyPlan(
+            team_id=team_id,
+            agent_run_id=ar.id,
+            week_start=plan.week_start,
+            plan_json=plan.model_dump_json()
+        )
+        db.add(wp)
+
     db.refresh(wp)
     return wp
 

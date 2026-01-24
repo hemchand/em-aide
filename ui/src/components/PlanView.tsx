@@ -21,9 +21,10 @@ function linkifyPRs(text: string, pull_requests: GitPullRequestMap[] | null) {
     const prNum = m ? (m[2] ?? m[3]) : null;
     if (!prNum) return <span key={i}>{part}</span>;
 
-    const repo = getRepoConfig(Number(prNum), pull_requests);
-    const href = `${repo?.web_base_url.replace(/\/$/, "")}/${repo?.owner}/${repo?.repo}/pull/${prNum}`;
     const label = part.replace(/\s+/g, "");
+    const repo = getRepoConfig(Number(prNum), pull_requests);
+    if (!repo?.web_base_url) return <span key={i}>{label}</span>;
+    const href = `${repo.web_base_url.replace(/\/$/, "")}/${repo.owner}/${repo.repo}/pull/${prNum}`;
     return (
       <a
         key={i}

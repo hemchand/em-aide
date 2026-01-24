@@ -2,7 +2,6 @@ import datetime as dt
 from sqlalchemy.orm import Session
 from app import models
 from app.schemas import ContextPacketSchema, Signal, EntityRef
-from app.util import sha256_short
 
 def build_context_packet(team: models.Team, db: Session) -> ContextPacketSchema:
     # Pull latest metrics (today or most recent)

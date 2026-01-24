@@ -24,6 +24,18 @@ export default function Dashboard() {
 
   const selectedTeam = useMemo(() => teams.find(t => t.id === teamId) ?? null, [teams, teamId]);
 
+  const loadTeamData = async (id: number) => {
+    const p = await getLatestPlan(id);
+    setPlan(p);
+    setRawJson(p ? JSON.stringify(p, null, 2) : null);
+
+    const ms = await getLatestMetrics(id);
+    setMetrics(ms);
+
+    const prs = await getGitPullRequests(id);
+    setPrs(prs);
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -37,22 +49,12 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-useEffect(() => {
-  if (!teamId) return;
-  (async () => {
-    const p = await getLatestPlan(teamId);
-    setPlan(p);
-    setRawJson(p ? JSON.stringify(p, null, 2) : null);
-
-    const ms = await getLatestMetrics(teamId);
-    setMetrics(ms);
-
-    const prs = await getGitPullRequests(teamId);
-    setPrs(prs);
-  })().catch((e: any) => {
-    setToast({ kind: "error", message: e?.message ?? String(e) });
-  });
-}, [teamId]);
+  useEffect(() => {
+    if (!teamId) return;
+    loadTeamData(teamId).catch((e: any) => {
+      setToast({ kind: "error", message: e?.message ?? String(e) });
+    });
+  }, [teamId]);
 
   const act = async (label: string, fn: () => Promise<any>) => {
     setBusy(label);
@@ -62,15 +64,7 @@ useEffect(() => {
       setToast({ kind: "ok", message: `${label} complete` });
 
       if (teamId) {
-        const p = await getLatestPlan(teamId);
-        setPlan(p);
-        setRawJson(p ? JSON.stringify(p, null, 2) : null);
-
-        const ms = await getLatestMetrics(teamId);
-        setMetrics(ms);
-
-        const prs = await getGitPullRequests(teamId);
-        setPrs(prs);
+        await loadTeamData(teamId);
       }
 
     } catch (e: any) {
