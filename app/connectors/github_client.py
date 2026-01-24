@@ -3,7 +3,6 @@ from typing import Iterable, Optional
 from github import Github
 from github.Repository import Repository
 from github.PullRequest import PullRequest as GhPR
-from app.settings import settings
 from app.logging import get_logger
 
 log = get_logger("github_client")
@@ -32,5 +31,6 @@ class GitHubClient:
                 if pr.updated_at and pr.updated_at.replace(tzinfo=None) < since:
                     break
                 yield pr
-            except Exception:
+            except Exception as exc:
+                log.warning("Failed to iterate PR: %s", exc)
                 continue

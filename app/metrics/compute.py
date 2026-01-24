@@ -1,16 +1,15 @@
 import datetime as dt
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from app import models
 
 def compute_metrics(team_id: int, db: Session) -> dict[str, float]:
     #GIT metrics from PR table + reviews table
-    prs = db.query(models.PullRequest).filter_by(team_id=team_id).all()
-    reviews = db.query(models.PullRequestReview).filter_by(team_id=team_id).all()
+    prs_query = db.query(models.PullRequest).filter_by(team_id=team_id).yield_per(1000)
+    reviews_query = db.query(models.PullRequestReview).filter_by(team_id=team_id).yield_per(1000)
 
     # Index reviews by (git_repo_id, pr_number)
     rv_map: dict[tuple[str,int], list[models.PullRequestReview]] = {}
-    for rv in reviews:
+    for rv in reviews_query:
         rv_map.setdefault((rv.git_repo_id, rv.pr_number), []).append(rv)
 
     now = dt.datetime.utcnow()
@@ -22,7 +21,9 @@ def compute_metrics(team_id: int, db: Session) -> dict[str, float]:
     mega_prs = 0
     low_review_coverage = 0
 
-    for pr in prs:
+    pr_count = 0
+    for pr in prs_query:
+        pr_count += 1
         is_open = pr.merged_at is None and pr.closed_at is None
         if is_open:
             open_pr_count += 1
@@ -55,16 +56,22 @@ def compute_metrics(team_id: int, db: Session) -> dict[str, float]:
     avg_first_review_latency = sum(first_review_latency_hours)/len(first_review_latency_hours) if first_review_latency_hours else 0.0
 
     # Jira lightweight metrics
-    issues = db.query(models.Issue).filter_by(team_id=team_id).all()
-    blocked = sum(1 for i in issues if i.is_blocked)
-    in_progress = sum(1 for i in issues if i.status.lower() in {"in progress","doing","development","implementing"})
-    total_issues = len(issues)
+    issues_query = db.query(models.Issue).filter_by(team_id=team_id).yield_per(1000)
+    blocked = 0
+    in_progress = 0
+    total_issues = 0
+    for i in issues_query:
+        total_issues += 1
+        if i.is_blocked:
+            blocked += 1
+        if i.status.lower() in {"in progress","doing","development","implementing"}:
+            in_progress += 1
 
     blocked_rate = (blocked/total_issues) if total_issues else 0.0
     wip = float(in_progress)
 
     metrics = {
-        "pr_count": float(len(prs)),
+        "pr_count": float(pr_count),
         "pr_open_count": float(open_pr_count),
         "pr_avg_cycle_hours": float(avg_cycle),
         "pr_avg_first_review_latency_hours": float(avg_first_review_latency),

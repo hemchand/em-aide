@@ -29,7 +29,7 @@ export const getLatestPlan = async (teamId: number): Promise<WeeklyPlan | null> 
 // Git sync endpoint might be non-/api in your backend (depends on whether you added the alias).
 // This calls the non-/api path which should exist if you implemented manual sync earlier.
 export const syncGit = (teamId: number) =>
-  request(`/teams/${teamId}/sync/git`, { method: "POST" });
+  request(`/api/teams/${teamId}/sync/git`, { method: "POST" });
 
 export const getLatestMetrics = async (teamId: number): Promise<Metric[]> => {
   // expects backend endpoint: GET /api/teams/{team_id}/metrics/latest

@@ -24,7 +24,19 @@ def api_git_pull_requests(team_id: int, db: Session = Depends(db_dep)):
 
 @router.get("/teams/{team_id}/llm/runs")
 def llm_runs(team_id: int, db: Session = Depends(db_dep)):
-    return (db.query(models.AgentRun)
+    runs = (db.query(models.AgentRun)
         .filter_by(team_id=team_id)
         .order_by(models.AgentRun.created_at.desc())
         .limit(50).all())
+    return [
+        {
+            "id": r.id,
+            "team_id": r.team_id,
+            "created_at": r.created_at,
+            "llm_mode": r.llm_mode,
+            "model": r.model,
+            "status": r.status,
+            "error": r.error,
+        }
+        for r in runs
+    ]

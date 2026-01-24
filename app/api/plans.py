@@ -27,4 +27,4 @@ def api_llm_context_preview(team_id: int, db: Session = Depends(db_dep)):
         raise HTTPException(status_code=403, detail="Disabled in this environment")
 
     packet = get_llm_context_preview(db, team_id)
-    return json.loads(packet.content_json)
+    return json.loads(packet.content_json) if packet else {}
