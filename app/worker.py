@@ -5,7 +5,7 @@ from app.db import SessionLocal, init_db
 from app.settings import settings
 from app import models
 from app.services.setup import ensure_defaults_setup
-from app.ingest.git_ingest import sync_team_git
+from app.ingest.git_ingest import SyncInProgress, sync_team_git
 from app.ingest.jira_ingest import sync_jira
 from app.metrics.compute import snapshot_metrics
 from app.logging import get_logger
@@ -21,8 +21,11 @@ def job_sync():
     db = SessionLocal()
     try:
         team = _get_team(db)
-        n = sync_team_git(team_id=team.id, db=db, since_days=30)
-        log.info(f"git sync completed")
+        try:
+            n = sync_team_git(team_id=team.id, db=db, since_days=30, owner="worker")
+            log.info(f"git sync completed")
+        except SyncInProgress:
+            log.info("git sync skipped: already running")
 
         if settings.jira_base_url and settings.jira_email and settings.jira_api_token and settings.jira_project_key:
             jcfg = db.query(models.JiraConfig).filter_by(team_id=team.id).one_or_none()

@@ -1,18 +1,21 @@
 import os
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app import models
 from app.api.deps import db_dep
-from app.services.plans import run_weekly_plan, get_latest_plan, get_llm_context_preview
+from app.services.plans import PlanInProgress, run_weekly_plan, get_latest_plan, get_llm_context_preview
 
 router = APIRouter(tags=["plans"])
 
 @router.post("/teams/{team_id}/plan/run")
 def run(team_id: int, db: Session = Depends(db_dep)):
-    wp = run_weekly_plan(db=db, team_id=team_id)
-    return {"weekly_plan_id": wp.id, "week_start": str(wp.week_start)}
+    try:
+        wp = run_weekly_plan(db=db, team_id=team_id, owner="api")
+        return {"weekly_plan_id": wp.id, "week_start": str(wp.week_start)}
+    except PlanInProgress as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 @router.get("/teams/{team_id}/plan/latest")
 def latest(team_id: int, db: Session = Depends(db_dep)):

@@ -146,3 +146,13 @@ class WeeklyPlan(Base):
     week_start: Mapped[dt.date] = mapped_column()
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
     plan_json: Mapped[str] = mapped_column(Text)
+
+class ActionLock(Base):
+    __tablename__ = "action_locks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), index=True)
+    action: Mapped[str] = mapped_column(String(50))
+    owner: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    locked_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("team_id", "action", name="uq_action_lock"),)

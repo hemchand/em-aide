@@ -1,11 +1,45 @@
 
+import datetime as dt
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app import models
 from app.settings import settings
 from app.context.builder import build_context_packet
 from app.agents.weekly_plan import generate_weekly_plan
 
-def run_weekly_plan(db: Session, team_id: int) -> models.WeeklyPlan:
+class PlanInProgress(Exception):
+    pass
+
+def _acquire_plan_lock(db: Session, team_id: int, *, owner: str | None, ttl_minutes: int = 60) -> None:
+    now = dt.datetime.utcnow()
+    lock = models.ActionLock(team_id=team_id, action="weekly_plan", owner=owner, locked_at=now)
+    try:
+        db.add(lock)
+        db.commit()
+        return
+    except IntegrityError:
+        db.rollback()
+
+    existing = db.query(models.ActionLock).filter_by(team_id=team_id, action="weekly_plan").one_or_none()
+    if existing and (now - existing.locked_at) > dt.timedelta(minutes=ttl_minutes):
+        db.delete(existing)
+        db.commit()
+        try:
+            db.add(lock)
+            db.commit()
+            return
+        except IntegrityError:
+            db.rollback()
+
+    raise PlanInProgress(f"weekly plan already running for team {team_id}")
+
+def _release_plan_lock(db: Session, team_id: int) -> None:
+    db.query(models.ActionLock).filter_by(team_id=team_id, action="weekly_plan").delete()
+    db.commit()
+
+def run_weekly_plan(db: Session, team_id: int, owner: str | None = None) -> models.WeeklyPlan:
+    _acquire_plan_lock(db, team_id, owner=owner)
     team = db.query(models.Team).filter_by(id=team_id).one()
     packet = build_context_packet(team, db)
 
@@ -28,6 +62,8 @@ def run_weekly_plan(db: Session, team_id: int) -> models.WeeklyPlan:
             )
             db.add(ar)
         raise
+    finally:
+        _release_plan_lock(db, team_id)
 
     with db.begin():
         cp = models.ContextPacket(team_id=team_id, content_json=packet.model_dump_json())
