@@ -68,21 +68,31 @@ body {
 
 .tab-btn {
   appearance: none;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
+  border: 1px solid rgba(120, 130, 150, 0.2);
+  background: rgba(248, 250, 252, 0.9);
+  color: rgba(30, 41, 59, 0.9);
   font-weight: 700;
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(219, 234, 254, 0.9);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #1e3a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.18);
 }
 
 .tab-btn.active {
-  color: var(--text);
-  background: var(--panel-strong);
-  border-color: rgba(47, 126, 251, 0.28);
-  box-shadow: 0 6px 12px rgba(47, 126, 251, 0.12);
+  color: #ffffff;
+  background: #3b82f6;
+  border-color: #2563eb;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
 }
 
 .tab-card-wrap .card {

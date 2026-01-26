@@ -260,23 +260,27 @@ export default function Dashboard() {
           kind="secondary"
           label={busy === "Sync Git" ? "Syncing…" : "Sync Git now"}
           disabled={!teamId || !!busy}
+          tone="blue"
           onClick={() => act("Sync Git", () => syncGit(teamId!))}
         />
         <Button
           kind="secondary"
           label={busy === "Snapshot metrics" ? "Snapshotting…" : "Snapshot metrics"}
           disabled={!teamId || !!busy}
+          tone="teal"
           onClick={() => act("Snapshot metrics", () => snapshotMetrics(teamId!))}
         />
         <Button
           label={busy === "Run weekly plan" ? "Planning…" : "Run weekly plan"}
           disabled={!teamId || !!busy}
+          tone="green"
           onClick={() => act("Run weekly plan", () => runWeeklyPlan(teamId!))}
         />
         <Button
           kind="secondary"
           label={busy === "Preview LLM data" ? "Loading…" : "Preview LLM data"}
           disabled={!teamId || !!busy}
+          tone="violet"
           onClick={() =>
             act("Preview LLM data", async () => {
               const ctx = await getLlmContextPreview(teamId!);
