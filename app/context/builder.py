@@ -22,12 +22,23 @@ def build_context_packet(team: models.Team, db: Session) -> ContextPacketSchema:
         signals.append(Signal(name=s.name, value=float(s.value), unit=unit))
 
     now = dt.datetime.utcnow()
-    # Top PR entities: oldest open + mega PRs
+    # Top PR entities: oldest open + mega PRs + needs review
     prs = (db.query(models.PullRequest)
            .filter_by(team_id=team.id)
            .order_by(models.PullRequest.created_at.asc())
            .limit(200)
            .all())
+    pr_ids = [(pr.git_repo_id, pr.pr_number) for pr in prs]
+    review_pairs: set[tuple[int, int]] = set()
+    if pr_ids:
+        repo_ids = {r for r, _ in pr_ids}
+        pr_numbers = {n for _, n in pr_ids}
+        reviews = (db.query(models.PullRequestReview)
+                   .filter(models.PullRequestReview.team_id == team.id)
+                   .filter(models.PullRequestReview.git_repo_id.in_(repo_ids))
+                   .filter(models.PullRequestReview.pr_number.in_(pr_numbers))
+                   .all())
+        review_pairs = {(rv.git_repo_id, rv.pr_number) for rv in reviews}
     entities: list[EntityRef] = []
     for pr in prs[:40]:
         age_days = (now - pr.created_at).total_seconds()/86400.0
@@ -37,6 +48,9 @@ def build_context_packet(team: models.Team, db: Session) -> ContextPacketSchema:
             flags.append("stale_pr")
         if size >= 2000:
             flags.append("mega_pr")
+        if pr.merged_at is None and pr.closed_at is None and age_days > 1:
+            if (pr.git_repo_id, pr.pr_number) not in review_pairs:
+                flags.append("needs_review")
         entities.append(EntityRef(
             kind="pr",
             id=f"PR-{pr.pr_number}",

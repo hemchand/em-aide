@@ -1,4 +1,5 @@
 import type { Metric } from "../types";
+import { metricLabel } from "../metrics";
 
 export function MetricsTable(props: { metrics: Metric[] }) {
   if (!props.metrics.length) {
@@ -17,7 +18,7 @@ export function MetricsTable(props: { metrics: Metric[] }) {
       <tbody>
         {props.metrics.map((m, i) => (
           <tr key={i}>
-            <td><code>{m.name}</code></td>
+            <td>{metricLabel(m.name)}</td>
             <td>{Number.isFinite(m.value) ? m.value.toFixed(3) : String(m.value)}</td>
             <td>{m.as_of_date}</td>
           </tr>

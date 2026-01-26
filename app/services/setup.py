@@ -52,7 +52,7 @@ def ensure_git_provider(db: Session, name: str, api_base_url: str) -> models.Git
     return gp
 
 def upsert_configs(db: Session, team: models.Team, git_cfg: dict, jira_cfg: dict | None):
-    repo = db.query(models.GitRepo).filter_by(team_id=team.id).one_or_none()
+    repo = db.query(models.GitRepo).filter_by(team_id=team.id, owner=git_cfg.get("owner")).one_or_none()
     if not repo:
         repo = models.GitRepo(team_id=team.id, **git_cfg)
         db.add(repo)

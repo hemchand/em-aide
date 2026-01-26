@@ -12,9 +12,9 @@ export function Button(props: {
       style={{
         padding: "10px 12px",
         borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background: primary ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.06)",
-        color: primary ? "#0b1020" : "rgba(255,255,255,0.92)",
+        border: primary ? "1px solid rgba(18,24,38,0.12)" : "1px solid rgba(18,24,38,0.16)",
+        background: primary ? "rgba(18,24,38,0.92)" : "rgba(18,24,38,0.06)",
+        color: primary ? "#f8fafc" : "rgba(18,24,38,0.9)",
         cursor: props.disabled ? "not-allowed" : "pointer",
         fontWeight: 800
       }}

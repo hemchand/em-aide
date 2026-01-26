@@ -1,29 +1,97 @@
 :root {
-  --bg: #0b1020;
-  --panel: rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.10);
-  --border2: rgba(255,255,255,0.08);
-  --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.65);
+  --bg: #f3f5f9;
+  --bg2: #ffffff;
+  --panel: rgba(255,255,255,0.98);
+  --panel-strong: rgba(255, 255, 255, 1);
+  --border: rgba(74, 90, 120, 0.14);
+  --border2: rgba(74, 90, 120, 0.1);
+  --text: rgba(24, 35, 55, 0.95);
+  --muted: rgba(74, 90, 120, 0.72);
+  --accent-open: #2f7efb;
+  --accent-ok: #20c07a;
+  --accent-warn: #f2b233;
+  --accent-teal: #2fb3c9;
+  --accent-rose: #f04545;
+  --accent-violet: #6b5de7;
+  --accent-sky: #4aa4ff;
+  --font-body: "Avenir Next", "Futura", "Gill Sans", "Helvetica Neue", sans-serif;
+  --font-display: "Iowan Old Style", "Palatino", "Georgia", serif;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  background: radial-gradient(1200px 800px at 12% 8%, #14204a 0%, var(--bg) 58%);
+  font-family: var(--font-body);
+  background: linear-gradient(180deg, var(--bg2), var(--bg));
   color: var(--text);
 }
 
 .container { max-width: 1120px; margin: 0 auto; padding: 22px; }
-.header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom: 14px; flex-wrap: wrap; }
-.h1 { font-size: 28px; font-weight: 900; letter-spacing: 0.2px; }
+.header { margin-bottom: 14px; }
+.header-banner { display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap: wrap; }
+.h1 { font-size: 28px; font-weight: 900; letter-spacing: 0.2px; font-family: var(--font-display); }
+.title-banner {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(32, 192, 122, 0.16);
+  border: 1px solid rgba(32, 192, 122, 0.35);
+  box-shadow: 0 10px 20px rgba(32, 192, 122, 0.16);
+}
+.header-banner {
+  background: rgba(32, 192, 122, 0.12);
+  border: 1px solid rgba(32, 192, 122, 0.28);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 24px rgba(32, 192, 122, 0.12);
+}
 .sub { color: var(--muted); margin-top: 6px; max-width: 760px; line-height: 1.4; }
 .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+.tab-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tab-bar {
+  display: inline-flex;
+  gap: 6px;
+  margin: 0 0 -1px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border2);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  padding: 4px 6px;
+}
+
+.tab-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  color: var(--text);
+  background: var(--panel-strong);
+  border-color: rgba(47, 126, 251, 0.28);
+  box-shadow: 0 6px 12px rgba(47, 126, 251, 0.12);
+}
+
+.tab-card-wrap .card {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
 
 select {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.9);
   color: var(--text);
   border: 1px solid var(--border);
   padding: 10px 12px;
@@ -34,6 +102,20 @@ select {
 .grid { display: grid; gap: 14px; }
 @media (min-width: 980px) {
   .grid-2 { grid-template-columns: 1.05fr 0.95fr; }
+}
+.week-metrics-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 980px) {
+  .week-metrics-grid { grid-template-columns: 1fr 1fr; }
+}
+.actions-risks-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 980px) {
+  .actions-risks-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .card {
@@ -52,8 +134,317 @@ hr.soft { border: none; border-top: 1px solid var(--border2); margin: 14px 0; }
 
 code { background: rgba(255,255,255,0.06); border: 1px solid var(--border2); padding: 2px 6px; border-radius: 8px; }
 
-.notice {
-  border: 1px solid rgba(255,255,255I’m ChatGPT and can’t complete the “zip generation” part right now because the file packaging tools are erroring out on my side. But the complete React UI code is above; you can paste these files into your `ui/` folder and it will restore the earlier dashboard features with real backend calls.
+.metrics-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
-.notice.error { border-color: rgba(239,68,68,0.45); background: rgba(239,68,68,0.12); }
-.notice.ok { border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.10); }
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-open);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notice {
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.6);
+  padding: 12px;
+}
+.notice.error { border-color: rgba(240,69,69,0.45); background: rgba(240,69,69,0.08); }
+.notice.ok { border-color: rgba(32,192,122,0.35); background: rgba(32,192,122,0.08); }
+
+.plan-section {
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid var(--border2);
+}
+
+.plan-actions {
+  background: rgba(47, 126, 251, 0.08);
+  border-color: rgba(47, 126, 251, 0.18);
+}
+
+.plan-risks {
+  background: rgba(240, 69, 69, 0.06);
+  border-color: rgba(240, 69, 69, 0.18);
+}
+
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.widget {
+  background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0));
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 22px rgba(30, 40, 60, 0.12);
+  animation: rise 0.35s ease both;
+}
+
+.widget-blue {
+  border-color: rgba(47, 126, 251, 0.28);
+  background: linear-gradient(135deg, rgba(47, 126, 251, 0.14), rgba(255,255,255,0.02));
+}
+
+.widget-amber {
+  border-color: rgba(242, 178, 51, 0.3);
+  background: linear-gradient(135deg, rgba(242, 178, 51, 0.16), rgba(255,255,255,0.02));
+}
+
+.widget-rose {
+  border-color: rgba(240, 69, 69, 0.28);
+  background: linear-gradient(135deg, rgba(240, 69, 69, 0.14), rgba(255,255,255,0.02));
+}
+
+.widget-teal {
+  border-color: rgba(47, 179, 201, 0.26);
+  background: linear-gradient(135deg, rgba(47, 179, 201, 0.14), rgba(255,255,255,0.02));
+}
+
+.widget-violet {
+  border-color: rgba(107, 93, 231, 0.26);
+  background: linear-gradient(135deg, rgba(107, 93, 231, 0.14), rgba(255,255,255,0.02));
+}
+
+.widget-sky {
+  border-color: rgba(74, 164, 255, 0.26);
+  background: linear-gradient(135deg, rgba(74, 164, 255, 0.14), rgba(255,255,255,0.02));
+}
+
+.critical-list {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.critical-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(20,27,45,0.08);
+}
+
+.critical-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.critical-item a {
+  color: var(--accent-open);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.critical-meta {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.widget.wide {
+  margin-top: 12px;
+}
+
+.widget-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.widget-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 8px;
+  font-family: var(--font-display);
+}
+
+.widget-sub {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.meter {
+  margin-top: 10px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(20,27,45,0.08);
+  overflow: hidden;
+  display: flex;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+}
+
+.legend {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.spark-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.spark-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.sparkline {
+  width: 160px;
+  height: 42px;
+}
+
+.spark-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.spark-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.spark-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 0;
+}
+
+.delta {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+}
+
+.delta.up {
+  color: #7f1d1d;
+  border-color: rgba(239,68,68,0.55);
+  background: rgba(239,68,68,0.16);
+}
+
+.delta.down {
+  color: #14532d;
+  border-color: rgba(34,197,94,0.55);
+  background: rgba(34,197,94,0.16);
+}
+
+.delta.neutral {
+  color: rgba(203, 201, 54, 0.7);
+  background: rgba(20,27,45,0.06);
+}
+
+.pill {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  color: rgba(20,27,45,0.9);
+}
+
+.select-card {
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  animation: rise 0.35s ease both;
+}
+
+.select-card.active {
+  border-color: rgba(96,165,250,0.6);
+  background: rgba(96,165,250,0.08);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+thead th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border2);
+  padding-bottom: 8px;
+}
+
+tbody td {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(20,27,45,0.05);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .spark-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sparkline {
+    width: 100%;
+  }
+}
+.card-health.good {
+  box-shadow: 0 18px 36px rgba(32, 192, 122, 0.12);
+  border-color: rgba(32, 192, 122, 0.22);
+}
+
+.card-health.warn {
+  box-shadow: 0 18px 36px rgba(242, 178, 51, 0.16);
+  border-color: rgba(242, 178, 51, 0.26);
+}
+
+.card-health.bad {
+  box-shadow: 0 18px 36px rgba(240, 69, 69, 0.18);
+  border-color: rgba(240, 69, 69, 0.28);
+}
