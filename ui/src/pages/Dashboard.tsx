@@ -3,8 +3,8 @@ import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "../types";
 import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, getLatestMetrics, getGitPullRequests, getLlmContextPreview } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
+import { DashboardCard } from "../components/DashboardCard";
 import { PlanView } from "../components/PlanView";
-import { MetricsTable } from "../components/MetricsTable";
 import { metricLabel } from "../metrics";
 
 type ContextEntity = {
@@ -21,41 +21,6 @@ const formatNumber = (value: number | null, digits = 1) => {
   if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}k`;
   if (digits === 0) return `${Math.round(value)}`;
   return value.toFixed(digits);
-};
-
-const Sparkline = (props: { values: number[]; color: string }) => {
-  const values = props.values.filter((v) => Number.isFinite(v));
-  if (!values.length) return <div className="spark-empty">No data</div>;
-
-  const width = 160;
-  const height = 42;
-  const padding = 6;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-
-  const points = values.map((v, i) => {
-    const x = padding + (i * (width - padding * 2)) / Math.max(values.length - 1, 1);
-    const y = height - padding - ((v - min) / range) * (height - padding * 2);
-    return `${x},${y}`;
-  }).join(" ");
-
-  const lastX = padding + ((values.length - 1) * (width - padding * 2)) / Math.max(values.length - 1, 1);
-  const lastY = height - padding - ((values[values.length - 1] - min) / range) * (height - padding * 2);
-
-  return (
-    <svg className="sparkline" viewBox={`0 0 ${width} ${height}`}>
-      <polyline
-        fill="none"
-        stroke={props.color}
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        points={points}
-      />
-      <circle cx={lastX} cy={lastY} r="3.5" fill={props.color} />
-    </svg>
-  );
 };
 
 type Toast = { kind: "ok" | "error"; message: string } | null;
@@ -339,151 +304,30 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {activeTab === "dashboard" ? (
-          <Card
-            title="Dashboard"
-            right={
-              <span className="muted small">
-                {selectedTeam ? `Team #${selectedTeam.id}` : ""}
-                {prs ? " · " + prs.map((repo) => `${repo.owner}/${repo.repo}`).join(", ") : ""}
-              </span>
-            }
-            className={`card-health ${healthTone}`}
-          >
-          <div className="widget-grid">
-            <div className="widget widget-blue">
-              <div className="widget-title">PR state mix</div>
-              <div className="widget-value">{formatNumber(prTotal, 0)} total</div>
-              <div className="meter">
-                {prSegments.map((seg) => (
-                  <span
-                    key={seg.label}
-                    style={{
-                      width: `${Math.round((seg.value / prTotalForMeter) * 100)}%`,
-                      background: seg.color,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="legend">
-                {prSegments.map((seg) => (
-                  <div key={seg.label} className="legend-item">
-                    <span className="legend-dot" style={{ background: seg.color }} />
-                    {seg.label} <strong>{Math.round(seg.value)}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* <div className="widget widget-amber">
-              <div className="widget-title">Cycle time</div>
-              <div className="widget-value">
-                {formatNumber(latestMetric("pr_avg_cycle_hours"), 1)}h
-              </div>
-              <div className="widget-sub">Avg merge time for recent PRs</div>
-            </div> */}
-
-            <div className="widget widget-rose">
-              <div className="widget-title">Review coverage</div>
-              <div className="widget-value">
-                {formatNumber(latestMetric("pr_low_review_coverage_count"), 0)}
-              </div>
-              <div className="widget-sub">Open PRs &gt;24h without review</div>
-            </div>
-
-            <div className="widget widget-blue">
-              <div className="widget-title">Jira blocked rate</div>
-              <div className="widget-value">
-                {formatNumber((latestMetric("jira_blocked_rate") ?? 0) * 100, 0)}%
-              </div>
-              <div className="widget-sub">Issues flagged as blocked</div>
-            </div>
-
-            <div className="widget widget-amber">
-              <div className="widget-title">Critical PRs</div>
-              <div className="critical-list">
-                {criticalPrs.length ? criticalPrs.map((pr) => {
-                  const href = prHref(pr.id);
-                  return (
-                    <div key={pr.id} className="critical-item">
-                      {href ? (
-                        <a href={href} target="_blank" rel="noreferrer">
-                          {pr.id}
-                        </a>
-                      ) : (
-                        <span>{pr.id}</span>
-                      )}
-                      <span className="critical-meta">
-                        {pr.flags.map(flagLabel).join(", ")}
-                      </span>
-                    </div>
-                  );
-                }) : <div className="muted small">No critical PRs in context.</div>}
-              </div>
-            </div>
-
-            <div className="widget widget-rose">
-              <div className="widget-title">Critical Issues</div>
-              <div className="critical-list">
-                {criticalIssues.length ? criticalIssues.map((issue) => (
-                  <div key={issue.id} className="critical-item">
-                    <span>{issue.id}</span>
-                    <span className="critical-meta">
-                      {issue.flags.length ? issue.flags.map(flagLabel).join(", ") : issue.state}
-                    </span>
-                  </div>
-                )) : <div className="muted small">No critical issues in context.</div>}
-              </div>
-            </div>
-          </div>
-
-          <hr className="soft" />
-
-          <div className="grid week-metrics-grid">
-            <div className="widget">
-              <div className="widget-title">Week over week</div>
-              <div className="spark-grid">
-                {weekSeries.map((series) => {
-                  const values = series.values;
-                  const latest = values[values.length - 1];
-                  const prev = values[values.length - 2];
-                  const delta = Number.isFinite(latest) && Number.isFinite(prev) ? latest - prev : null;
-                  const deltaClass = delta == null || delta === 0 ? "delta neutral" : delta > 0 ? "delta up" : "delta down";
-                  return (
-                    <div className="spark-row" key={series.label}>
-                      <div>
-                        <div className="spark-label">{series.label}</div>
-                        <div className="spark-value">{formatNumber(latest ?? null, 1)}</div>
-                      </div>
-                      <Sparkline values={values} color={series.color} />
-                      <div className={deltaClass}>
-                        {delta == null ? "—" : `${delta >= 0 ? "+" : ""}${formatNumber(delta, 1)}`}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="widget">
-              <div className="metrics-head">
-                <div style={{ fontWeight: 900 }}>Latest snapshot metrics</div>
-                <button
-                  className="link-btn"
-                  onClick={() => setShowMetricsHistory((v) => !v)}
-                >
-                  {showMetricsHistory ? "Show less" : "Show last 7 days"}
-                </button>
-              </div>
-              <MetricsTable metrics={showMetricsHistory ? recentMetrics : latestMetrics} />
-            </div>
-          </div>
-
-          </Card>
-        ) : (
-          <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
-            {plan ? (
-              <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
+      {activeTab === "dashboard" ? (
+        <DashboardCard
+          selectedTeamId={selectedTeam?.id ?? null}
+          repoLabels={prs ? prs.map((repo) => `${repo.owner}/${repo.repo}`).join(", ") : ""}
+          healthTone={healthTone}
+          prTotal={prTotal}
+          prSegments={prSegments}
+          prTotalForMeter={prTotalForMeter}
+          latestMetric={latestMetric}
+          formatNumber={formatNumber}
+          criticalPrs={criticalPrs}
+          criticalIssues={criticalIssues}
+          prHref={prHref}
+          flagLabel={flagLabel}
+          weekSeries={weekSeries}
+          showMetricsHistory={showMetricsHistory}
+          setShowMetricsHistory={setShowMetricsHistory}
+          recentMetrics={recentMetrics}
+          latestMetrics={latestMetrics}
+        />
+      ) : (
+        <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
+          {plan ? (
+            <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
             ) : (
               <div className="muted">
                 No plan yet. Click <code>Run weekly plan</code>.
