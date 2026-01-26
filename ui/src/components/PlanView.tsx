@@ -81,160 +81,162 @@ export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; pul
         </div>
       ) : null}
 
-      <div>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Top actions</div>
-        <div className="grid" style={{ gap: 10 }}>
-          {(p.top_actions || []).map((a, idx) => (
-            <div
-              key={idx}
-              className={`select-card ${openAction === idx ? "active" : ""}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => setOpenAction(openAction === idx ? null : idx)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setOpenAction(openAction === idx ? null : idx);
-              }}
-            >
+      <div className="grid actions-risks-grid">
+        <div className="plan-section plan-actions">
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>Top actions</div>
+          <div className="grid" style={{ gap: 10 }}>
+            {(p.top_actions || []).map((a, idx) => (
               <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
+                key={idx}
+                className={`select-card ${openAction === idx ? "active" : ""}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setOpenAction(openAction === idx ? null : idx)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setOpenAction(openAction === idx ? null : idx);
                 }}
               >
-                <div style={{ fontWeight: 700 }}>
-                  {idx + 1}. {a.title}
-                </div>
-                <div className="pill" style={{
-                  borderColor: scoreStyle(a.confidence).bd,
-                  background: scoreStyle(a.confidence).bg,
-                  color: scoreStyle(a.confidence).fg
-                }}>
-                  Confidence {pct(a.confidence)}
-                </div>
-              </div>
-
-              {openAction === idx ? (
                 <div
                   style={{
-                    marginTop: 8,
-                    lineHeight: 1.5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
                   }}
                 >
-                  <div>
-                    <strong>Impact:</strong> {a.expected_impact}
+                  <div style={{ fontWeight: 700 }}>
+                    {idx + 1}. {a.title}
                   </div>
-                  <div style={{ marginTop: 6 }}>
-                    <strong>Why:</strong> {a.rationale}
-                  </div>
-
-                  {a.evidence?.length ? (
-                    <div style={{ marginTop: 6 }}>
-                      <strong>Evidence:</strong>{" "}
-                      <span className="muted">
-                        {a.evidence.map((e, idx) => (
-                          <span key={idx}>
-                            {idx ? "; " : ""}
-                            {linkifyPRs(e, props.pull_requests)}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {a.steps?.length ? (
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Steps</strong>
-                      <ol style={{ marginTop: 6, marginBottom: 0 }}>
-                        {a.steps.slice(0, 3).map((s, i) => (
-                          <li key={i} style={{ marginBottom: 6 }}>
-                            {s}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  ) : null}
-
-                  <div style={{ marginTop: 6 }}>
-                    <strong>Risk:</strong> {a.risk}
+                  <div className="pill" style={{
+                    borderColor: scoreStyle(a.confidence).bd,
+                    background: scoreStyle(a.confidence).bg,
+                    color: scoreStyle(a.confidence).fg
+                  }}>
+                    Confidence {pct(a.confidence)}
                   </div>
                 </div>
-              ) : null}
-            </div>
-          ))}
-          {!p.top_actions || p.top_actions.length === 0 ? (
-            <div className="muted">No actions returned.</div>
-          ) : null}
-        </div>
-      </div>
 
-      <div>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Top risks</div>
-        <div className="grid" style={{ gap: 10 }}>
-          {(p.top_risks || []).map((r, idx) => (
-            <div
-              key={idx}
-              className={`select-card ${openRisk === idx ? "active" : ""}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => setOpenRisk(openRisk === idx ? null : idx)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setOpenRisk(openRisk === idx ? null : idx);
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <Badge kind={r.severity} text={r.severity.toUpperCase()} />
-                  <div style={{ fontWeight: 700 }}>{r.title}</div>
-                  </div>
-                <div className="pill" style={{
-                  borderColor: scoreStyle(r.likelihood).bd,
-                  background: scoreStyle(r.likelihood).bg,
-                  color: scoreStyle(r.likelihood).fg
-                }}>
-                  Likelihood {pct(r.likelihood)}
-                </div>
-              </div>
-
-              {openRisk === idx ? (
-                <>
+                {openAction === idx ? (
                   <div
                     style={{
                       marginTop: 8,
-                      lineHeight: 1.45,
+                      lineHeight: 1.5,
                     }}
                   >
-                    {r.description}
-                  </div>
+                    <div>
+                      <strong>Impact:</strong> {a.expected_impact}
+                    </div>
+                    <div style={{ marginTop: 6 }}>
+                      <strong>Why:</strong> {a.rationale}
+                    </div>
 
-                  {r.mitigations?.length ? (
+                    {a.evidence?.length ? (
+                      <div style={{ marginTop: 6 }}>
+                        <strong>Evidence:</strong>{" "}
+                        <span className="muted">
+                          {a.evidence.map((e, idx) => (
+                            <span key={idx}>
+                              {idx ? "; " : ""}
+                              {linkifyPRs(e, props.pull_requests)}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {a.steps?.length ? (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>Steps</strong>
+                        <ol style={{ marginTop: 6, marginBottom: 0 }}>
+                          {a.steps.slice(0, 3).map((s, i) => (
+                            <li key={i} style={{ marginBottom: 6 }}>
+                              {s}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    ) : null}
+
+                    <div style={{ marginTop: 6 }}>
+                      <strong>Risk:</strong> {a.risk}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+            {!p.top_actions || p.top_actions.length === 0 ? (
+              <div className="muted">No actions returned.</div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="plan-section plan-risks">
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>Top risks</div>
+          <div className="grid" style={{ gap: 10 }}>
+            {(p.top_risks || []).map((r, idx) => (
+              <div
+                key={idx}
+                className={`select-card ${openRisk === idx ? "active" : ""}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setOpenRisk(openRisk === idx ? null : idx)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setOpenRisk(openRisk === idx ? null : idx);
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <Badge kind={r.severity} text={r.severity.toUpperCase()} />
+                    <div style={{ fontWeight: 700 }}>{r.title}</div>
+                    </div>
+                  <div className="pill" style={{
+                    borderColor: scoreStyle(r.likelihood).bd,
+                    background: scoreStyle(r.likelihood).bg,
+                    color: scoreStyle(r.likelihood).fg
+                  }}>
+                    Likelihood {pct(r.likelihood)}
+                  </div>
+                </div>
+
+                {openRisk === idx ? (
+                  <>
                     <div
                       style={{
                         marginTop: 8,
                         lineHeight: 1.45,
                       }}
                     >
-                      <strong>Mitigations:</strong>{" "}
-                      <span className="muted">
-                        {r.mitigations.slice(0, 3).join("; ")}
-                      </span>
+                      {r.description}
                     </div>
-                  ) : null}
-                </>
-              ) : null}
-            </div>
-          ))}
-          {!p.top_risks || p.top_risks.length === 0 ? (
-            <div className="muted">No risks returned.</div>
-          ) : null}
+
+                    {r.mitigations?.length ? (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        <strong>Mitigations:</strong>{" "}
+                        <span className="muted">
+                          {r.mitigations.slice(0, 3).join("; ")}
+                        </span>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            ))}
+            {!p.top_risks || p.top_risks.length === 0 ? (
+              <div className="muted">No risks returned.</div>
+            ) : null}
+          </div>
         </div>
       </div>
 

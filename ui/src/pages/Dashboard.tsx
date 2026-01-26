@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [llmContext, setLlmContext] = useState<string | null>(null);
   const [showLlmContext, setShowLlmContext] = useState(false);
   const [showMetricsHistory, setShowMetricsHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "plan">("dashboard");
 
   const selectedTeam = useMemo(() => teams.find(t => t.id === teamId) ?? null, [teams, teamId]);
   const metricsByName = useMemo(() => {
@@ -266,17 +267,19 @@ export default function Dashboard() {
   return (
     <div className="container">
       <div className="header">
-        <div>
-          <div className="h1">EM-Aide</div>
-          <div className="sub">
-            Weekly EM brief generated from local delivery signals. No code, diffs, or ticket text is sent to the model.
+        <div className="header-banner">
+          <div>
+            <div className="h1">EM-Aide</div>
+            <div className="sub">
+              Weekly EM brief generated from local delivery signals. No code, diffs, or ticket text is sent to the model.
+            </div>
           </div>
-        </div>
 
-        <div className="row">
-          <select value={teamId ?? ""} onChange={(e) => setTeamId(Number(e.target.value))}>
-            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
+          <div className="row">
+            <select value={teamId ?? ""} onChange={(e) => setTeamId(Number(e.target.value))}>
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -320,17 +323,33 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-2">
-        <Card
-          title="Dashboard"
-          right={
-            <span className="muted small">
-              {selectedTeam ? `Team #${selectedTeam.id}` : ""}
-              {prs ? " · " + prs.map((repo) => `${repo.owner}/${repo.repo}`).join(", ") : ""}
-            </span>
-          }
-          className={`card-health ${healthTone}`}
-        >
+      <div className="tab-card-wrap">
+        <div className="tab-bar">
+          <button
+            className={`tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            Dashboard
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "plan" ? "active" : ""}`}
+            onClick={() => setActiveTab("plan")}
+          >
+            Weekly plan
+          </button>
+        </div>
+
+        {activeTab === "dashboard" ? (
+          <Card
+            title="Dashboard"
+            right={
+              <span className="muted small">
+                {selectedTeam ? `Team #${selectedTeam.id}` : ""}
+                {prs ? " · " + prs.map((repo) => `${repo.owner}/${repo.repo}`).join(", ") : ""}
+              </span>
+            }
+            className={`card-health ${healthTone}`}
+          >
           <div className="widget-grid">
             <div className="widget widget-blue">
               <div className="widget-title">PR state mix</div>
@@ -356,13 +375,13 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="widget widget-amber">
+            {/* <div className="widget widget-amber">
               <div className="widget-title">Cycle time</div>
               <div className="widget-value">
                 {formatNumber(latestMetric("pr_avg_cycle_hours"), 1)}h
               </div>
               <div className="widget-sub">Avg merge time for recent PRs</div>
-            </div>
+            </div> */}
 
             <div className="widget widget-rose">
               <div className="widget-title">Review coverage</div>
@@ -418,103 +437,107 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="widget wide">
-            <div className="widget-title">Week over week</div>
-            <div className="spark-grid">
-              {weekSeries.map((series) => {
-                const values = series.values;
-                const latest = values[values.length - 1];
-                const prev = values[values.length - 2];
-                const delta = Number.isFinite(latest) && Number.isFinite(prev) ? latest - prev : null;
-                const deltaClass = delta == null ? "delta neutral" : delta >= 0 ? "delta up" : "delta down";
-                return (
-                  <div className="spark-row" key={series.label}>
-                    <div>
-                      <div className="spark-label">{series.label}</div>
-                      <div className="spark-value">{formatNumber(latest ?? null, 1)}</div>
-                    </div>
-                    <Sparkline values={values} color={series.color} />
-                    <div className={deltaClass}>
-                      {delta == null ? "—" : `${delta >= 0 ? "+" : ""}${formatNumber(delta, 1)}`}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           <hr className="soft" />
 
-        {showLlmContext ? (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 18,
-        zIndex: 50
-      }}
-      onClick={() => setShowLlmContext(false)}
-    >
+          <div className="grid week-metrics-grid">
+            <div className="widget">
+              <div className="widget-title">Week over week</div>
+              <div className="spark-grid">
+                {weekSeries.map((series) => {
+                  const values = series.values;
+                  const latest = values[values.length - 1];
+                  const prev = values[values.length - 2];
+                  const delta = Number.isFinite(latest) && Number.isFinite(prev) ? latest - prev : null;
+                  const deltaClass = delta == null || delta === 0 ? "delta neutral" : delta > 0 ? "delta up" : "delta down";
+                  return (
+                    <div className="spark-row" key={series.label}>
+                      <div>
+                        <div className="spark-label">{series.label}</div>
+                        <div className="spark-value">{formatNumber(latest ?? null, 1)}</div>
+                      </div>
+                      <Sparkline values={values} color={series.color} />
+                      <div className={deltaClass}>
+                        {delta == null ? "—" : `${delta >= 0 ? "+" : ""}${formatNumber(delta, 1)}`}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="widget">
+              <div className="metrics-head">
+                <div style={{ fontWeight: 900 }}>Latest snapshot metrics</div>
+                <button
+                  className="link-btn"
+                  onClick={() => setShowMetricsHistory((v) => !v)}
+                >
+                  {showMetricsHistory ? "Show less" : "Show last 7 days"}
+                </button>
+              </div>
+              <MetricsTable metrics={showMetricsHistory ? recentMetrics : latestMetrics} />
+            </div>
+          </div>
+
+          </Card>
+        ) : (
+          <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
+            {plan ? (
+              <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
+            ) : (
+              <div className="muted">
+                No plan yet. Click <code>Run weekly plan</code>.
+              </div>
+            )}
+          </Card>
+        )}
+
+
+      {showLlmContext ? (
       <div
-        className="card"
-        style={{ width: "min(1100px, 96vw)", maxHeight: "86vh", overflow: "auto" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 18,
+          zIndex: 50
+        }}
+        onClick={() => setShowLlmContext(false)}
       >
-        <div className="card-head">
-          <div className="card-title">LLM data preview (sanitized payload)</div>
-          <div className="row">
-            <Button kind="secondary" label="Close" onClick={() => setShowLlmContext(false)} />
-          </div>
-        </div>
-
-      <div className="muted small" style={{ marginTop: 8 }}>
-        This is the exact JSON payload sent to the model. Prompts are not shown.
-        </div>
-
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            marginTop: 12,
-            padding: 12,
-            borderRadius: 14,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(0,0,0,0.25)"
-          }}
+        <div
+          className="card"
+          style={{ width: "min(1100px, 96vw)", maxHeight: "86vh", overflow: "auto" }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {llmContext ?? "No context loaded."}
-        </pre>
-      </div>
-    </div>
-  ) : null}
-
-          <div style={{ marginTop: 12 }}>
-            <div className="metrics-head">
-              <div style={{ fontWeight: 900 }}>Latest snapshot metrics</div>
-              <button
-                className="link-btn"
-                onClick={() => setShowMetricsHistory((v) => !v)}
-              >
-                {showMetricsHistory ? "Show less" : "Show last 7 days"}
-              </button>
+          <div className="card-head">
+            <div className="card-title">LLM data preview (sanitized payload)</div>
+            <div className="row">
+              <Button kind="secondary" label="Close" onClick={() => setShowLlmContext(false)} />
             </div>
-            <MetricsTable metrics={showMetricsHistory ? recentMetrics : latestMetrics} />
           </div>
 
-        </Card>
+        <div className="muted small" style={{ marginTop: 8 }}>
+          This is the exact JSON payload sent to the model. Prompts are not shown.
+          </div>
 
-        <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
-          {plan ? (
-            <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
-          ) : (
-            <div className="muted">
-              No plan yet. Click <code>Run weekly plan</code>.
-            </div>
-          )}
-        </Card>
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(0,0,0,0.25)"
+            }}
+          >
+            {llmContext ?? "No context loaded."}
+          </pre>
+        </div>
+      </div>
+    ) : null}
       </div>
     </div>
   );
