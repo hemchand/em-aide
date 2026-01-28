@@ -1,4 +1,4 @@
-# EM-Aide (MVP) — Local Data + Remote LLM with plans for local LLM
+# EM-Aide (MVP) — Local Data + Remote/Local LLM
 
 EM-Aide is a local, privacy-first Engineering Manager Copilot:
 - Ingests Jira Cloud + GitHub (Cloud or Enterprise via base URL) **into a local Postgres DB**
@@ -27,25 +27,42 @@ docker compose up -d --build
 
 - http://localhost:8080/app
 
+## Docker services
+`docker-compose.yml` runs three services:
+- `db` (Postgres 16) exposed on `5432`
+- `api` (FastAPI) exposed on `APP_PORT` (default `8080`)
+- `worker` (scheduler + background jobs)
+
+All services load environment variables from `.env`.
+
 ## GitHub Cloud vs Enterprise
 Set `GITHUB_API_BASE_URL`:
 - GitHub Cloud default: `https://api.github.com`
 - GitHub Enterprise Server: `https://<your-ghe-domain>/api/v3`
 
 ## LLM Support
-This MVP uses an OpenAI-compatible endpoint.
-Set:
+EM-Aide supports a remote OpenAI-compatible endpoint, remote Ollama endpoint or a local Ollama instance.
+
+Only **sanitized metrics & IDs** are sent to the LLM.
+
+Remote (OpenAI-compatible):
+- `LLM_MODE=openai`
 - `LLM_BASE_URL`
 - `LLM_API_KEY`
 - `LLM_MODEL`
 
-Only **sanitized metrics & IDs** are sent to the LLM.
+Remote (Ollama):
+- `LLM_MODE=ollama`
+- `LLM_BASE_URL`
+- `LLM_API_KEY`
+- `LLM_MODEL`
 
-## Whats in cards
-There is a stub `OllamaClient` you can enable later via:
+Local (Ollama):
 - `LLM_MODE=local`
 - `OLLAMA_BASE_URL=http://host.docker.internal:11434`
 - `OLLAMA_MODEL=...`
+
+When `LLM_MODE=local`, `LLM_API_KEY` is not required.
 
 ## Jobs
 Worker runs:
