@@ -8,7 +8,13 @@ router = APIRouter(tags=["teams"])
 @router.get("/teams")
 def list_teams(db: Session = Depends(db_dep)):
     teams = db.query(models.Team).all()
-    return [{"id": t.id, "name": t.name} for t in teams]
+    rows = []
+    for t in teams:
+        jira_base_url = None
+        if t.jira_config and t.jira_config.base_url:
+            jira_base_url = t.jira_config.base_url
+        rows.append({"id": t.id, "name": t.name, "jira_base_url": jira_base_url})
+    return rows
 
 @router.get("/teams/{team_id}/git/pull/requests")
 def api_git_pull_requests(team_id: int, db: Session = Depends(db_dep)):

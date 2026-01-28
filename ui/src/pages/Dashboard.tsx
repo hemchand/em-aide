@@ -222,6 +222,11 @@ export default function Dashboard() {
     return null;
   };
 
+  const jiraHref = (id: string) => {
+    if (!selectedTeam?.jira_base_url) return null;
+    return `${selectedTeam.jira_base_url.replace(/\/$/, "")}/browse/${id}`;
+  };
+
   const flagLabel = (flag: string) => {
     if (flag === "stale_pr") return "stale";
     if (flag === "needs_review") return "needs review";
@@ -320,10 +325,11 @@ export default function Dashboard() {
           latestMetric={latestMetric}
           formatNumber={formatNumber}
           criticalPrs={criticalPrs}
-          criticalIssues={criticalIssues}
-          prHref={prHref}
-          flagLabel={flagLabel}
-          weekSeries={weekSeries}
+      criticalIssues={criticalIssues}
+      prHref={prHref}
+      jiraHref={jiraHref}
+      flagLabel={flagLabel}
+      weekSeries={weekSeries}
           showMetricsHistory={showMetricsHistory}
           setShowMetricsHistory={setShowMetricsHistory}
           recentMetrics={recentMetrics}

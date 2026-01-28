@@ -1,4 +1,4 @@
-export type Team = { id: number; name: string };
+export type Team = { id: number; name: string; jira_base_url?: string | null };
 
 export type Action = {
   title: string;

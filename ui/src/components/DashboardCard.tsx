@@ -34,6 +34,7 @@ type DashboardCardProps = {
   criticalPrs: CriticalItem[];
   criticalIssues: CriticalItem[];
   prHref: (id: string) => string | null;
+  jiraHref: (id: string) => string | null;
   flagLabel: (flag: string) => string;
   weekSeries: WeekSeries[];
   showMetricsHistory: boolean;
@@ -54,6 +55,7 @@ export function DashboardCard({
   criticalPrs,
   criticalIssues,
   prHref,
+  jiraHref,
   flagLabel,
   weekSeries,
   showMetricsHistory,
@@ -139,14 +141,23 @@ export function DashboardCard({
         <div className="widget widget-rose">
           <div className="widget-title">Critical Issues</div>
           <div className="critical-list">
-            {criticalIssues.length ? criticalIssues.map((issue) => (
-              <div key={issue.id} className="critical-item">
-                <span>{issue.id}</span>
-                <span className="critical-meta">
-                  {issue.flags.length ? issue.flags.map(flagLabel).join(", ") : issue.state}
-                </span>
-              </div>
-            )) : <div className="muted small">No critical issues in context.</div>}
+            {criticalIssues.length ? criticalIssues.map((issue) => {
+              const href = jiraHref(issue.id);
+              return (
+                <div key={issue.id} className="critical-item">
+                  {href ? (
+                    <a href={href} target="_blank" rel="noreferrer">
+                      {issue.id}
+                    </a>
+                  ) : (
+                    <span>{issue.id}</span>
+                  )}
+                  <span className="critical-meta">
+                    {issue.flags.length ? issue.flags.map(flagLabel).join(", ") : issue.state}
+                  </span>
+                </div>
+              );
+            }) : <div className="muted small">No critical issues in context.</div>}
           </div>
         </div>
       </div>

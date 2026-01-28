@@ -74,7 +74,7 @@ def build_context_packet(team: models.Team, db: Session) -> ContextPacketSchema:
             flags.append("blocked")
         entities.append(EntityRef(
             kind="issue",
-            id=f"JIRA-{iss.key}",
+            id=f"{iss.key}",
             state=iss.status,
             age_days=round(age_days,2) if age_days is not None else None,
             size=None,
