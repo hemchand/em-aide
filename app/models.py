@@ -156,3 +156,10 @@ class ActionLock(Base):
     locked_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("team_id", "action", name="uq_action_lock"),)
+
+class JobRun(Base):
+    __tablename__ = "job_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), index=True)
+    action: Mapped[str] = mapped_column(String(50), index=True)
+    ran_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
