@@ -1,12 +1,31 @@
 from __future__ import annotations
 from typing import Protocol, Type, Any
+import os
+import json
 import httpx
 from pydantic import BaseModel
 from app.settings import settings
 
+mode = os.getenv("LLM_MODE", "openai").lower()
+
 class LLMClient(Protocol):
     def generate_structured(self, system: str, user: str, schema: Type[BaseModel]) -> BaseModel: ...
     def name(self) -> str: ...
+
+def _parse_structured(content: str, schema: Type[BaseModel]) -> BaseModel:
+    try:
+        return schema.model_validate_json(content)
+    except Exception:
+        start = content.find("{")
+        end = content.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise
+        snippet = content[start:end + 1]
+        try:
+            return schema.model_validate_json(snippet)
+        except Exception:
+            data = json.loads(snippet)
+            return schema.model_validate(data)
 
 class OpenAICompatibleClient:
     def __init__(self):
@@ -42,35 +61,41 @@ class OpenAICompatibleClient:
             data = r.json()
         content = data["choices"][0]["message"]["content"]
         # Parse JSON into schema
-        return schema.model_validate_json(content)
+        return _parse_structured(content, schema)
 
 class OllamaClient:
-    # Stub for Option A readiness (not used in MVP by default)
     def __init__(self):
         self.base_url = settings.ollama_base_url.rstrip("/")
         self.model = settings.ollama_model
+        self.api_key = settings.llm_api_key
 
     def name(self) -> str:
         return f"local:{self.model}"
 
     def generate_structured(self, system: str, user: str, schema: Type[BaseModel]) -> BaseModel:
         url = f"{self.base_url}/api/chat"
+        headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         payload = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
+            "format": "json",
+            "options": {
+                "temperature": settings.llm_temperature,
+                "num_predict": settings.llm_max_tokens,
+            },
             "stream": False,
         }
-        with httpx.Client(timeout=120) as client:
-            r = client.post(url, json=payload)
+        with httpx.Client(timeout=settings.llm_timeout_seconds) as client:
+            r = client.post(url, headers=headers, json=payload)
             r.raise_for_status()
             data = r.json()
         content = data["message"]["content"]
-        return schema.model_validate_json(content)
+        return _parse_structured(content, schema)
 
 def get_llm_client() -> LLMClient:
-    if settings.llm_mode.lower() == "local":
+    if settings.llm_mode.lower() in ["ollama", "local"]:
         return OllamaClient()
     return OpenAICompatibleClient()
