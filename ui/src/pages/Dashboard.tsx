@@ -125,7 +125,7 @@ export default function Dashboard() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const act = async (label: string, fn: () => Promise<any>) => {
+  const act = async (label: string, fn: () => Promise<any>, onSuccess?: () => void) => {
     setBusy(label);
     setToast(null);
     try {
@@ -135,6 +135,7 @@ export default function Dashboard() {
       if (teamId) {
         await loadTeamData(teamId);
       }
+      onSuccess?.();
 
     } catch (e: any) {
       setToast({ kind: "error", message: e?.message ?? String(e) });
@@ -261,20 +262,20 @@ export default function Dashboard() {
           label={busy === "Sync Git" ? "Syncing…" : "Sync Git now"}
           disabled={!teamId || !!busy}
           tone="blue"
-          onClick={() => act("Sync Git", () => syncGit(teamId!))}
+          onClick={() => act("Sync Git", () => syncGit(teamId!), () => setActiveTab("dashboard"))}
         />
         <Button
           kind="secondary"
           label={busy === "Snapshot metrics" ? "Snapshotting…" : "Snapshot metrics"}
           disabled={!teamId || !!busy}
           tone="teal"
-          onClick={() => act("Snapshot metrics", () => snapshotMetrics(teamId!))}
+          onClick={() => act("Snapshot metrics", () => snapshotMetrics(teamId!), () => setActiveTab("dashboard"))}
         />
         <Button
           label={busy === "Run weekly plan" ? "Planning…" : "Run weekly plan"}
           disabled={!teamId || !!busy}
           tone="green"
-          onClick={() => act("Run weekly plan", () => runWeeklyPlan(teamId!))}
+          onClick={() => act("Run weekly plan", () => runWeeklyPlan(teamId!), () => setActiveTab("plan"))}
         />
         <Button
           kind="secondary"
