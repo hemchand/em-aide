@@ -107,7 +107,15 @@ export function DashboardCard({
           <div className="widget-sub">Open PRs &gt;24h without review</div>
         </div>
 
-        <div className="widget widget-blue">
+        <div className="widget widget-amber">
+          <div className="widget-title">Cycle time</div>
+          <div className="widget-value">
+            {formatNumber(latestMetric("pr_avg_cycle_hours"), 1)}h
+          </div>
+          <div className="widget-sub">Avg merge time for recent PRs</div>
+        </div> 
+
+        <div className="widget widget-amber">
           <div className="widget-title">Jira blocked rate</div>
           <div className="widget-value">
             {formatNumber((latestMetric("jira_blocked_rate") ?? 0) * 100, 0)}%
@@ -115,7 +123,7 @@ export function DashboardCard({
           <div className="widget-sub">Issues flagged as blocked</div>
         </div>
 
-        <div className="widget widget-amber">
+        <div className="widget widget-blue">
           <div className="widget-title">Critical PRs</div>
           <div className="critical-list">
             {criticalPrs.length ? criticalPrs.map((pr) => {

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     jira_project_key: str | None = Field(default=None, alias="JIRA_PROJECT_KEY")
     jira_board_id: str | None = Field(default=None, alias="JIRA_BOARD_ID")
 
-    llm_mode: str = Field(default="remote", alias="LLM_MODE")  # remote | local
+    llm_mode: str = Field(default="openai", alias="LLM_MODE")  # remote | local
     llm_base_url: str = Field(default="https://api.openai.com/v1", alias="LLM_BASE_URL")
     llm_api_key: str | None = Field(default=None, alias="LLM_API_KEY")
     llm_model: str = Field(default="gpt-4.1-mini", alias="LLM_MODEL")
