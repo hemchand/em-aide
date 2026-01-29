@@ -357,7 +357,7 @@ export default function Dashboard() {
       ) : (
         <Card title="Weekly plan" right={plan ? <span className="muted small">Latest</span> : null}>
           {plan ? (
-            <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} />
+            <PlanView plan={plan} rawJson={rawJson} pull_requests={prs} showRawJson={canPreviewLlm} />
             ) : (
               <div className="muted">
                 No plan yet. Click <code>Run weekly plan</code>.

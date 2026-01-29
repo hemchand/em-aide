@@ -42,7 +42,7 @@ function linkifyPRs(text: string, pull_requests: GitPullRequestMap[] | null) {
 
 const pct = (x: number) => `${Math.round((Number.isFinite(x) ? x : 0) * 100)}%`;
 
-export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; pull_requests: GitPullRequestMap[] | null }) {
+export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; pull_requests: GitPullRequestMap[] | null; showRawJson?: boolean }) {
   const p = props.plan;
   const [openAction, setOpenAction] = useState<number | null>(null);
   const [openRisk, setOpenRisk] = useState<number | null>(null);
@@ -240,7 +240,7 @@ export function PlanView(props: { plan: WeeklyPlan; rawJson?: string | null; pul
         </div>
       </div>
 
-      {props.rawJson ? (
+      {props.rawJson && props.showRawJson ? (
         <details>
           <summary className="muted">Show raw JSON</summary>
           <pre
