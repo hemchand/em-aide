@@ -1,7 +1,12 @@
+import os
 from fastapi import APIRouter
 
 router = APIRouter(tags=["health"])
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "project": "EM-Aide"}
+    return {
+        "status": "ok",
+        "project": "EM-Aide",
+        "environment": os.getenv("ENVIRONMENT", "unknown"),
+    }

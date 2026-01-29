@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "../types";
-import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, syncJira, getLatestMetrics, getGitPullRequests, getLlmContextPreview } from "../api";
+import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, syncJira, getLatestMetrics, getGitPullRequests, getLlmContextPreview, getHealth } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { DashboardCard } from "../components/DashboardCard";
@@ -40,8 +40,10 @@ export default function Dashboard() {
   const [showLlmContext, setShowLlmContext] = useState(false);
   const [showMetricsHistory, setShowMetricsHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "plan">("dashboard");
+  const [environment, setEnvironment] = useState<string | null>(null);
 
   const selectedTeam = useMemo(() => teams.find(t => t.id === teamId) ?? null, [teams, teamId]);
+  const canPreviewLlm = environment === "local" || environment === "dev";
   const metricsByName = useMemo(() => {
     const map: Record<string, Metric[]> = {};
     metrics.forEach((m) => {
@@ -80,7 +82,7 @@ export default function Dashboard() {
     return metrics.filter((m) => new Date(m.as_of_date) >= cutoff);
   }, [metrics]);
 
-  const loadTeamData = async (id: number) => {
+  const loadTeamData = async (id: number, includePreview: boolean) => {
     const p = await getLatestPlan(id);
     setPlan(p);
     setRawJson(p ? JSON.stringify(p, null, 2) : null);
@@ -90,6 +92,11 @@ export default function Dashboard() {
 
     const prs = await getGitPullRequests(id);
     setPrs(prs);
+
+    if (!includePreview) {
+      setContextEntities([]);
+      return;
+    }
 
     try {
       const ctx = await getLlmContextPreview(id);
@@ -101,12 +108,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      try {
-        const t = await getTeams();
-        setTeams(t);
-        if (t.length && teamId == null) setTeamId(t[0].id);
-      } catch (e: any) {
-        setToast({ kind: "error", message: e?.message ?? String(e) });
+      const [teamsRes, healthRes] = await Promise.allSettled([getTeams(), getHealth()]);
+      if (teamsRes.status === "fulfilled") {
+        setTeams(teamsRes.value);
+        if (teamsRes.value.length && teamId == null) setTeamId(teamsRes.value[0].id);
+      } else {
+        setToast({ kind: "error", message: teamsRes.reason?.message ?? String(teamsRes.reason) });
+      }
+      if (healthRes.status === "fulfilled") {
+        setEnvironment(healthRes.value.environment ?? null);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,10 +124,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!teamId) return;
-    loadTeamData(teamId).catch((e: any) => {
+    loadTeamData(teamId, canPreviewLlm).catch((e: any) => {
       setToast({ kind: "error", message: e?.message ?? String(e) });
     });
-  }, [teamId]);
+  }, [teamId, canPreviewLlm]);
 
   useEffect(() => {
     if (!toast) return;
@@ -133,7 +143,7 @@ export default function Dashboard() {
       setToast({ kind: "ok", message: `${label} complete` });
 
       if (teamId) {
-        await loadTeamData(teamId);
+        await loadTeamData(teamId, canPreviewLlm);
       }
       onSuccess?.();
 
@@ -289,20 +299,22 @@ export default function Dashboard() {
           tone="green"
           onClick={() => act("Run weekly plan", () => runWeeklyPlan(teamId!), () => setActiveTab("plan"))}
         />
-        <Button
-          kind="secondary"
-          label={busy === "Preview LLM data" ? "Loading…" : "Preview LLM data"}
-          disabled={!teamId || !!busy}
-          tone="violet"
-          onClick={() =>
-            act("Preview LLM data", async () => {
-              const ctx = await getLlmContextPreview(teamId!);
-              setLlmContext(JSON.stringify(ctx, null, 2));
-              setShowLlmContext(true);
-              return ctx;
-            })
-          }
-        />
+        {canPreviewLlm ? (
+          <Button
+            kind="secondary"
+            label={busy === "Preview LLM data" ? "Loading…" : "Preview LLM data"}
+            disabled={!teamId || !!busy}
+            tone="violet"
+            onClick={() =>
+              act("Preview LLM data", async () => {
+                const ctx = await getLlmContextPreview(teamId!);
+                setLlmContext(JSON.stringify(ctx, null, 2));
+                setShowLlmContext(true);
+                return ctx;
+              })
+            }
+          />
+        ) : null}
       </div>
 
       <div className="tab-card-wrap">

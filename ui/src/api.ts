@@ -1,4 +1,4 @@
-import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "./types";
+import type { Team, WeeklyPlan, Metric, GitPullRequestMap, Health } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -43,3 +43,5 @@ export const getGitPullRequests = (teamId: number) =>
 
 export const getLlmContextPreview = (teamId: number) =>
   request<any>(`/api/teams/${teamId}/llm/context/preview`);
+
+export const getHealth = () => request<Health>("/api/health");

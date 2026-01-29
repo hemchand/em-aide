@@ -40,3 +40,9 @@ export type GitPullRequestMap = {
   web_base_url?: string;
   pull_requests: number[];
 };
+
+export type Health = {
+  status: string;
+  project: string;
+  environment?: string;
+};
