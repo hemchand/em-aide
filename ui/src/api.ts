@@ -30,6 +30,8 @@ export const getLatestPlan = async (teamId: number): Promise<WeeklyPlan | null> 
 // This calls the non-/api path which should exist if you implemented manual sync earlier.
 export const syncGit = (teamId: number) =>
   request(`/api/teams/${teamId}/sync/git`, { method: "POST" });
+export const syncJira = (teamId: number) =>
+  request(`/api/teams/${teamId}/sync/jira`, { method: "POST" });
 
 export const getLatestMetrics = async (teamId: number): Promise<Metric[]> => {
   // expects backend endpoint: GET /api/teams/{team_id}/metrics/latest

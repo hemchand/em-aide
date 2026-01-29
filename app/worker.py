@@ -41,18 +41,11 @@ def job_sync():
             log.info("git sync skipped: already running")
 
         if settings.jira_base_url and settings.jira_email and settings.jira_api_token and settings.jira_project_key:
-            jcfg = db.query(models.JiraConfig).filter_by(team_id=team.id).one_or_none()
-            if jcfg:
-                m = sync_jira(
-                    team_id=team.id,
-                    base_url=jcfg.base_url,
-                    email=jcfg.email,
-                    api_token=settings.jira_api_token,
-                    project_key=jcfg.project_key,
-                    db=db,
-                    max_results=200
-                )
+            try:
+                m = sync_jira(team_id=team.id, db=db, owner="worker")
                 log.info(f"jira synced: {m} issues")
+            except SyncInProgress:
+                log.info("jira sync skipped: already running")
 
     finally:
         db.close()

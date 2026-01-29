@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Team, WeeklyPlan, Metric, GitPullRequestMap } from "../types";
-import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, getLatestMetrics, getGitPullRequests, getLlmContextPreview } from "../api";
+import { getTeams, getLatestPlan, runWeeklyPlan, snapshotMetrics, syncGit, syncJira, getLatestMetrics, getGitPullRequests, getLlmContextPreview } from "../api";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { DashboardCard } from "../components/DashboardCard";
@@ -268,6 +268,13 @@ export default function Dashboard() {
           disabled={!teamId || !!busy}
           tone="blue"
           onClick={() => act("Sync Git", () => syncGit(teamId!), () => setActiveTab("dashboard"))}
+        />
+        <Button
+          kind="secondary"
+          label={busy === "Sync Jira" ? "Syncing…" : "Sync Jira now"}
+          disabled={!teamId || !!busy}
+          tone="blue"
+          onClick={() => act("Sync Jira", () => syncJira(teamId!), () => setActiveTab("dashboard"))}
         />
         <Button
           kind="secondary"
