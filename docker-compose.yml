@@ -10,6 +10,15 @@ services:
     volumes:
       - emaide_db:/var/lib/postgresql/data
 
+  ui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ui
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
   api:
     build:
       context: .

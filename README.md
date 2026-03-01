@@ -25,12 +25,13 @@ docker compose up -d --build
 
 3) Open React dashboard:
 
-- http://localhost:8080/app
+- http://localhost:3000/app
 
 ## Docker services
-`docker-compose.yml` runs three services:
+`docker-compose.yml` runs four services:
 - `db` (Postgres 16) exposed on `5432`
 - `api` (FastAPI) exposed on `APP_PORT` (default `8080`)
+- `ui` (React + nginx) exposed on `3000`
 - `worker` (scheduler + background jobs)
 
 All services load environment variables from `.env`.
