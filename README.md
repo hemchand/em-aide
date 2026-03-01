@@ -23,15 +23,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-3) Open React dashboard:
+3) Open React dashboard (served via reverse proxy):
 
 - http://localhost:3000/app
 
 ## Docker services
-`docker-compose.yml` runs four services:
+`docker-compose.yml` runs five services:
 - `db` (Postgres 16) exposed on `5432`
-- `api` (FastAPI) exposed on `APP_PORT` (default `8080`)
-- `ui` (React + nginx) exposed on `3000`
+- `api` (FastAPI) internal only
+- `ui` (React + nginx) internal only
+- `proxy` (nginx reverse proxy) exposed on `3000` and routes `/app` + `/api`
 - `worker` (scheduler + background jobs)
 
 All services load environment variables from `.env`.
