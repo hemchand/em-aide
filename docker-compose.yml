@@ -16,8 +16,6 @@ services:
       dockerfile: docker/Dockerfile.ui
     depends_on:
       - api
-    ports:
-      - "3000:80"
 
   api:
     build:
@@ -26,8 +24,16 @@ services:
     env_file: .env
     depends_on:
       - db
+  
+  proxy:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.proxy
+    depends_on:
+      - ui
+      - api
     ports:
-      - "${APP_PORT:-8080}:8080"
+      - "3000:80"
   
   worker:
     build:
