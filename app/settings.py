@@ -1,8 +1,11 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+_env_file = ".env" if Path(".env").exists() else None
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_env_file, extra="ignore")
 
     app_port: int = Field(default=8080, alias="APP_PORT")
     database_url: str = Field(alias="DATABASE_URL")
