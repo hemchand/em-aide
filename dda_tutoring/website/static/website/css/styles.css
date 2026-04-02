@@ -1,0 +1,414 @@
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --muted: #5d6470;
+  --line: #e6eaf0;
+  --accent: #2f6dff;
+  --accent-soft: #eef3ff;
+  --card-shadow: 0 10px 30px rgba(17, 17, 17, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: saturate(150%) blur(16px);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(230, 234, 240, 0.7);
+}
+
+.nav-wrap {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.84rem;
+}
+
+.brand-text {
+  font-size: 1rem;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.section {
+  padding: 112px 0;
+}
+
+.section-alt {
+  background: #f9fbfd;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.hero {
+  padding: 96px 0 110px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4f6ca7;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5.6vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 36px;
+  max-width: 22ch;
+}
+
+h3 {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.hero-copy {
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin-bottom: 30px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid transparent;
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(47, 109, 255, 0.24);
+  background: #245ce0;
+}
+
+.btn-small {
+  padding: 10px 16px;
+}
+
+.btn-ghost {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.btn-ghost:hover {
+  background: #f4f7fc;
+  box-shadow: none;
+}
+
+.hero-panel,
+.feature-card,
+.pricing-card,
+.team-card,
+.schedule-card,
+.guide-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.hero-panel {
+  padding: 28px;
+}
+
+.hero-panel h2 {
+  font-size: 1.28rem;
+  margin-bottom: 20px;
+}
+
+.hero-panel ul,
+.feature-card p,
+.pricing-card ul,
+.team-card ul,
+.schedule-card .muted,
+.guide-card ol {
+  color: var(--muted);
+}
+
+.hero-panel ul,
+.pricing-card ul,
+.team-card ul,
+.guide-card ol {
+  display: grid;
+  gap: 10px;
+  padding-left: 18px;
+}
+
+.feature-grid,
+.pricing-grid,
+.team-grid,
+.schedule-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.feature-card,
+.pricing-card,
+.team-card,
+.schedule-card {
+  padding: 26px;
+}
+
+.pricing-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.price {
+  margin: 12px 0 16px;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.price span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.inline-link {
+  margin-top: 18px;
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.steps {
+  list-style: none;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 8px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+
+.steps li:last-child {
+  border-bottom: 0;
+}
+
+.steps span {
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 36px;
+}
+
+.team-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  margin-bottom: 16px;
+}
+
+.team-focus {
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.team-card a {
+  margin-top: 18px;
+  display: inline-block;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.schedule-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.schedule-card p {
+  font-size: 1.05rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.guide-card {
+  padding: 24px;
+}
+
+.guide-card li + li {
+  margin-top: 10px;
+}
+
+.guide-card ul {
+  margin-top: 8px;
+  padding-left: 18px;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 26px 0;
+}
+
+.footer-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 680ms ease, transform 680ms ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 990px) {
+  .nav-links {
+    display: none;
+  }
+
+  .hero-grid,
+  .contact-layout,
+  .team-grid,
+  .feature-grid,
+  .pricing-grid,
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 88px 0;
+  }
+
+  .hero {
+    padding-top: 70px;
+  }
+}
